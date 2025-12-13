@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Markdown } from '@/components/ui/markdown';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -23,7 +26,13 @@ import {
   AlertTriangle,
   Lightbulb,
   RotateCcw,
-  ArrowRight
+  ArrowRight,
+  Send,
+  Bot,
+  User,
+  Copy,
+  Plus,
+  Zap
 } from 'lucide-react';
 
 interface Agent {
@@ -35,6 +44,20 @@ interface Agent {
 
 interface AgentRole {
   agent_name: string;
+  role_in_room: string;
+}
+
+interface MissingAgent {
+  suggested_name: string;
+  expertise: string;
+  why_needed: string;
+  atlas_prompt: string;
+}
+
+interface EphemeralAgent {
+  name: string;
+  description: string;
+  system_prompt: string;
   role_in_room: string;
 }
 
@@ -55,6 +78,14 @@ interface RoomSpec {
   ideal_use_cases?: string[];
   not_suitable_for?: string[];
   session_tips?: string[];
+  missing_agents?: MissingAgent[];
+  ephemeral_agents?: EphemeralAgent[];
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  recommendation?: RoomSpec | null;
 }
 
 interface ArchimedeDesignWorkspaceProps {
@@ -87,45 +118,115 @@ export default function ArchimedeDesignWorkspace({
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const [description, setDescription] = useState(initialDescription);
-  const [isDesigning, setIsDesigning] = useState(false);
+  // Chat mode state
+  const [chatMode, setChatMode] = useState(true);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: 'assistant',
+      content: "Hi! I'm Archimede, your Room Designer. Tell me about the deliberation, analysis, or decision you need to make, and I'll design the optimal room configuration with the right methodology, agents, and workflow.\n\nBe specific about your objectives, context, and expected outcomes.",
+    },
+  ]);
+  const [chatInput, setChatInput] = useState(initialDescription);
+  const [isThinking, setIsThinking] = useState(false);
+  
+  // Design mode state
   const [designedRoom, setDesignedRoom] = useState<RoomSpec | null>(null);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
   const [editedTemplate, setEditedTemplate] = useState('');
   const [refinementRequest, setRefinementRequest] = useState('');
   const [isRefining, setIsRefining] = useState(false);
+  
+  // Ephemeral agents state
+  const [ephemeralAgents, setEphemeralAgents] = useState<EphemeralAgent[]>([]);
+  const [showEphemeralForm, setShowEphemeralForm] = useState(false);
+  const [newEphemeralAgent, setNewEphemeralAgent] = useState<Partial<EphemeralAgent>>({});
+  
+  // Copy state
+  const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
 
-  const handleDesign = async () => {
-    if (!description.trim() || !archimedePrompt) return;
-    
-    setIsDesigning(true);
-    setDesignedRoom(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isThinking]);
+
+  // Auto-send if initialDescription is provided
+  useEffect(() => {
+    if (initialDescription && messages.length === 1) {
+      setChatInput(initialDescription);
+      // Small delay to show the input before sending
+      setTimeout(() => sendChatMessage(initialDescription), 500);
+    }
+  }, []);
+
+  const sendChatMessage = async (overrideMessage?: string) => {
+    const messageToSend = overrideMessage || chatInput.trim();
+    if (!messageToSend || isThinking) return;
+
+    setChatInput('');
+    setMessages(prev => [...prev, { role: 'user', content: messageToSend }]);
+    setIsThinking(true);
 
     try {
+      // Build conversation history
+      const conversationHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
       const { data, error } = await supabase.functions.invoke('design-room', {
         body: { 
-          description,
+          description: messageToSend,
           archimedePrompt,
-          userId: user?.id
+          userId: user?.id,
+          conversationHistory,
+          mode: 'conversational'
         }
       });
 
       if (error) throw error;
+      
       if (data?.room) {
         setDesignedRoom(data.room);
         setEditedTemplate(data.room.objective_template);
         setAvailableAgents(data.availableAgents || []);
+        if (data.room.ephemeral_agents) {
+          setEphemeralAgents(data.room.ephemeral_agents);
+        }
+        
+        // Add assistant message with recommendation
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.response || `I've designed a room called **"${data.room.name}"**. Here's the configuration:`,
+          recommendation: data.room
+        }]);
+      } else if (data?.response) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.response
+        }]);
       }
     } catch (error) {
-      console.error('Archimede design error:', error);
+      console.error('Archimede chat error:', error);
       toast({ 
         title: t('common.error'), 
-        description: error instanceof Error ? error.message : 'Failed to design room',
+        description: error instanceof Error ? error.message : 'Failed to process request',
         variant: 'destructive' 
       });
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "I encountered an error. Please try again with more details about your deliberation needs."
+      }]);
     } finally {
-      setIsDesigning(false);
+      setIsThinking(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
     }
   };
 
@@ -155,7 +256,8 @@ Please update the Room specification accordingly, keeping what works and improvi
         body: { 
           description: refinementPrompt,
           archimedePrompt,
-          userId: user?.id
+          userId: user?.id,
+          mode: 'refine'
         }
       });
 
@@ -163,6 +265,9 @@ Please update the Room specification accordingly, keeping what works and improvi
       if (data?.room) {
         setDesignedRoom(data.room);
         setEditedTemplate(data.room.objective_template);
+        if (data.room.ephemeral_agents) {
+          setEphemeralAgents(prev => [...prev, ...data.room.ephemeral_agents]);
+        }
         setRefinementRequest('');
         toast({ title: t('common.success'), description: 'Room refined successfully!' });
       }
@@ -181,9 +286,10 @@ Please update the Room specification accordingly, keeping what works and improvi
   const handleApply = () => {
     if (!designedRoom) return;
     
-    const finalSpec = {
+    const finalSpec: RoomSpec = {
       ...designedRoom,
       objective_template: editedTemplate,
+      ephemeral_agents: ephemeralAgents.length > 0 ? ephemeralAgents : undefined,
     };
     
     onApply(finalSpec);
@@ -194,11 +300,154 @@ Please update the Room specification accordingly, keeping what works and improvi
     return agent?.name || agentId.substring(0, 8);
   };
 
-  // Initial design phase
-  if (!designedRoom && !isDesigning) {
+  const copyAtlasPrompt = async (prompt: string, agentName: string) => {
+    await navigator.clipboard.writeText(prompt);
+    setCopiedPrompt(agentName);
+    toast({ title: 'Copied!', description: `Atlas prompt for "${agentName}" copied to clipboard` });
+    setTimeout(() => setCopiedPrompt(null), 2000);
+  };
+
+  const navigateToAtlasWithPrompt = (prompt: string) => {
+    navigate('/agents/new', { state: { atlasPrompt: prompt } });
+  };
+
+  const addEphemeralAgent = () => {
+    if (!newEphemeralAgent.name || !newEphemeralAgent.system_prompt) return;
+    
+    const agent: EphemeralAgent = {
+      name: newEphemeralAgent.name,
+      description: newEphemeralAgent.description || '',
+      system_prompt: newEphemeralAgent.system_prompt,
+      role_in_room: newEphemeralAgent.role_in_room || 'Specialist',
+    };
+    
+    setEphemeralAgents(prev => [...prev, agent]);
+    setNewEphemeralAgent({});
+    setShowEphemeralForm(false);
+    toast({ title: 'Ephemeral agent added', description: `"${agent.name}" will be created for this session only.` });
+  };
+
+  const removeEphemeralAgent = (index: number) => {
+    setEphemeralAgents(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const proceedToDesignMode = () => {
+    setChatMode(false);
+  };
+
+  // Render recommendation card in chat
+  const renderRecommendationCard = (room: RoomSpec) => (
+    <div className="mt-4 space-y-4">
+      <Card className="border-primary/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            {room.name}
+          </CardTitle>
+          <CardDescription className="text-xs">{room.short_description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Badge className={METHODOLOGY_COLORS[room.methodology] || 'bg-muted'}>
+              {room.methodology?.replace('_', ' ')}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              {WORKFLOW_ICONS[room.workflow_type]}
+              {room.workflow_type}
+            </Badge>
+            <Badge variant="outline">{room.max_rounds} rounds</Badge>
+          </div>
+          
+          {/* Agents */}
+          {room.agent_roles && room.agent_roles.length > 0 && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Agents</Label>
+              <div className="space-y-1">
+                {room.agent_roles.map((role, i) => (
+                  <div key={i} className="text-xs flex items-center gap-2">
+                    <Check className="h-3 w-3 text-green-500 shrink-0" />
+                    <span className="font-medium">{role.agent_name}</span>
+                    <span className="text-muted-foreground">— {role.role_in_room}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Missing Agents */}
+      {room.missing_agents && room.missing_agents.length > 0 && (
+        <Card className="border-amber-500/20 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-4 w-4" />
+              Suggested New Agents
+            </CardTitle>
+            <CardDescription className="text-xs">
+              These agents would improve this room but don't exist yet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {room.missing_agents.map((agent, i) => (
+                <div key={i} className="p-3 rounded-lg bg-background border">
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <p className="font-medium text-sm">{agent.suggested_name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{agent.expertise}</p>
+                      <p className="text-xs text-amber-600 mt-1">{agent.why_needed}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigateToAtlasWithPrompt(agent.atlas_prompt)}
+                      >
+                        <Sparkles className="h-3 w-3 mr-2" />
+                        Create with Atlas
+                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => copyAtlasPrompt(agent.atlas_prompt, agent.suggested_name)}
+                            >
+                              {copiedPrompt === agent.suggested_name ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">Copy prompt</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Button className="w-full" onClick={proceedToDesignMode}>
+        <Check className="h-4 w-4 mr-2" />
+        Review & Customize Design
+        <ArrowRight className="h-4 w-4 ml-2" />
+      </Button>
+    </div>
+  );
+
+  // Chat mode UI
+  if (chatMode) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
+        <div className="flex items-center gap-4 mb-4 shrink-0">
           <Button variant="ghost" size="sm" onClick={onCancel}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('common.cancel')}
@@ -209,74 +458,105 @@ Please update the Room specification accordingly, keeping what works and improvi
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Describe your deliberation need</CardTitle>
-            <CardDescription>
-              Tell Archimede what decision you need to make, what problem you're solving, or what analysis you need. 
-              He will design the optimal Room configuration.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              placeholder="e.g., I need to evaluate whether to expand into the European market. We should consider financial viability, regulatory requirements, competitive landscape, and strategic fit with our 3-year plan..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
-
-            <Button 
-              onClick={handleDesign} 
-              disabled={!description.trim()}
-              className="w-full"
-              size="lg"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Design Room
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isDesigning) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-500" />
-            <h2 className="text-xl font-semibold">Archimede Room Designer</h2>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="py-16">
-            <div className="flex flex-col items-center justify-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-purple-500" />
-              <p className="text-lg font-medium">Designing optimal Room...</p>
-              <p className="text-sm text-muted-foreground">Archimede is configuring methodology, agents, and parameters...</p>
+        <Card className="flex-1 flex flex-col min-h-0">
+          <CardHeader className="pb-3 border-b shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                <Sparkles className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Archimede</CardTitle>
+                <CardDescription className="mt-1">
+                  Your AI Room Design Assistant
+                </CardDescription>
+              </div>
             </div>
-          </CardContent>
+          </CardHeader>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
+              {messages.map((message, index) => (
+                <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                  {message.role === 'assistant' && (
+                    <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
+                      <Bot className="h-4 w-4 text-purple-500" />
+                    </div>
+                  )}
+                  <div
+                    className={`rounded-lg p-4 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground max-w-[80%]'
+                        : 'bg-muted flex-1 max-w-[90%]'
+                    }`}
+                  >
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                      <Markdown content={message.content} />
+                    </div>
+                    {message.role === 'assistant' && message.recommendation && renderRecommendationCard(message.recommendation)}
+                  </div>
+                  {message.role === 'user' && (
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isThinking && (
+                <div className="flex gap-3">
+                  <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
+                    <Bot className="h-4 w-4 text-purple-500" />
+                  </div>
+                  <div className="bg-muted rounded-lg p-4">
+                    <div className="flex gap-1.5">
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.3s]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+
+          <div className="border-t p-4 shrink-0">
+            <div className="flex gap-3 max-w-3xl mx-auto">
+              <Textarea
+                placeholder="Describe your deliberation, analysis, or decision-making need..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={2}
+                className="resize-none flex-1"
+                disabled={isThinking}
+              />
+              <Button 
+                onClick={() => sendChatMessage()} 
+                disabled={!chatInput.trim() || isThinking} 
+                className="shrink-0 h-auto"
+                size="lg"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
     );
   }
 
-  // Design review workspace
+  // Design review workspace (after chat creates a room)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <Button variant="ghost" size="sm" onClick={() => setChatMode(true)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('common.cancel')}
+            Back to Chat
           </Button>
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
-            <h2 className="text-xl font-semibold">Archimede Room Designer</h2>
+            <h2 className="text-xl font-semibold">Review Design</h2>
           </div>
         </div>
 
@@ -300,11 +580,6 @@ Please update the Room specification accordingly, keeping what works and improvi
               <CardDescription className="text-xs">{designedRoom?.short_description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Overview Box */}
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm">{designedRoom?.short_description}</p>
-              </div>
-
               {/* Methodology & Workflow */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -343,9 +618,6 @@ Please update the Room specification accordingly, keeping what works and improvi
                     <Badge key={tool} variant="secondary">{tool}</Badge>
                   ))}
                 </div>
-                {designedRoom?.max_rounds_rationale && (
-                  <p className="text-xs text-muted-foreground">{designedRoom.max_rounds_rationale}</p>
-                )}
               </div>
 
               <Separator />
@@ -373,6 +645,85 @@ Please update the Room specification accordingly, keeping what works and improvi
                   ))}
                 </ul>
               </div>
+
+              {/* Ephemeral Agents */}
+              {ephemeralAgents.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Zap className="h-3 w-3" />
+                      Ephemeral Agents (Session Only)
+                    </Label>
+                    <ul className="text-sm space-y-2">
+                      {ephemeralAgents.map((agent, i) => (
+                        <li key={i} className="flex items-start justify-between gap-2 p-2 bg-amber-500/5 rounded border border-amber-500/20">
+                          <div>
+                            <span className="font-medium">{agent.name}</span>
+                            <Badge variant="secondary" className="ml-2 text-xs">ephemeral</Badge>
+                            <p className="text-xs text-muted-foreground mt-1">{agent.role_in_room}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => removeEphemeralAgent(i)}
+                            className="shrink-0"
+                          >
+                            ×
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+
+              {/* Add Ephemeral Agent */}
+              {!showEphemeralForm ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={() => setShowEphemeralForm(true)}
+                >
+                  <Plus className="h-3 w-3 mr-2" />
+                  Add Ephemeral Agent
+                </Button>
+              ) : (
+                <Card className="border-dashed border-amber-500/30">
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium">New Ephemeral Agent</span>
+                    </div>
+                    <Input
+                      placeholder="Agent name"
+                      value={newEphemeralAgent.name || ''}
+                      onChange={(e) => setNewEphemeralAgent(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="Role in this room"
+                      value={newEphemeralAgent.role_in_room || ''}
+                      onChange={(e) => setNewEphemeralAgent(prev => ({ ...prev, role_in_room: e.target.value }))}
+                    />
+                    <Textarea
+                      placeholder="System prompt (define the agent's expertise and behavior)"
+                      value={newEphemeralAgent.system_prompt || ''}
+                      onChange={(e) => setNewEphemeralAgent(prev => ({ ...prev, system_prompt: e.target.value }))}
+                      rows={4}
+                      className="resize-none"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={addEphemeralAgent} disabled={!newEphemeralAgent.name || !newEphemeralAgent.system_prompt}>
+                        Add
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setShowEphemeralForm(false); setNewEphemeralAgent({}); }}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Use Cases */}
               {designedRoom?.ideal_use_cases && designedRoom.ideal_use_cases.length > 0 && (
@@ -505,6 +856,46 @@ Please update the Room specification accordingly, keeping what works and improvi
                     </li>
                   ))}
                 </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Missing Agents in review mode */}
+          {designedRoom?.missing_agents && designedRoom.missing_agents.length > 0 && (
+            <Card className="border-amber-500/20 bg-amber-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  Suggested New Agents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {designedRoom.missing_agents.map((agent, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-background border">
+                      <p className="font-medium text-sm">{agent.suggested_name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{agent.expertise}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigateToAtlasWithPrompt(agent.atlas_prompt)}
+                        >
+                          <Sparkles className="h-3 w-3 mr-2" />
+                          Create with Atlas
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => copyAtlasPrompt(agent.atlas_prompt, agent.suggested_name)}
+                        >
+                          {copiedPrompt === agent.suggested_name ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}

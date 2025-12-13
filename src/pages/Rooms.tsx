@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Play, Trash2, Settings, Users, RotateCcw, Sparkles } from 'lucide-react';
+import { Play, Trash2, Settings, Users, RotateCcw, Sparkles } from 'lucide-react';
 
 interface Room {
   id: string;
@@ -107,12 +107,8 @@ export default function Rooms() {
       <div className="flex justify-between items-center mb-6">
         <p className="text-muted-foreground">{t('rooms.description')}</p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/rooms/advisor')}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            {t('rooms.advisor')}
-          </Button>
           <Button onClick={() => navigate('/rooms/new')}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Sparkles className="h-4 w-4 mr-2" />
             {t('rooms.create')}
           </Button>
         </div>

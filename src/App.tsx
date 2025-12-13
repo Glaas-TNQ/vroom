@@ -16,7 +16,6 @@ import SessionView from "./pages/SessionView";
 import NewSession from "./pages/NewSession";
 import Rooms from "./pages/Rooms";
 import RoomBuilder from "./pages/RoomBuilder";
-import RoomAdvisor from "./pages/RoomAdvisor";
 import OneOnOne from "./pages/OneOnOne";
 import NotFound from "./pages/NotFound";
 
@@ -38,7 +37,6 @@ const App = () => (
               <Route path="/agents/:id" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
               <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
               <Route path="/rooms/new" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
-              <Route path="/rooms/advisor" element={<ProtectedRoute><RoomAdvisor /></ProtectedRoute>} />
               <Route path="/rooms/:id" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
               <Route path="/one-on-one" element={<ProtectedRoute><OneOnOne /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
