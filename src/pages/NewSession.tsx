@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Play, Layout } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users } from 'lucide-react';
 
 interface Agent {
   id: string;
@@ -21,39 +22,59 @@ interface Agent {
   color: string;
 }
 
-interface RoomTemplate {
+interface Room {
   id: string;
   name: string;
   description: string | null;
+  methodology: string;
+  workflow_type: string;
   agent_ids: string[];
   max_rounds: number;
-  objective: string | null;
+  objective_template: string | null;
   is_system: boolean;
 }
 
+const METHODOLOGY_LABELS: Record<string, { label: string; color: string; icon: string }> = {
+  analytical_structured: { label: 'McKinsey', color: 'bg-blue-500/10 text-blue-500', icon: '📊' },
+  strategic_executive: { label: 'OKR/BSC', color: 'bg-purple-500/10 text-purple-500', icon: '🎯' },
+  creative_brainstorming: { label: 'Brainstorming', color: 'bg-yellow-500/10 text-yellow-500', icon: '💡' },
+  lean_iterative: { label: 'Lean', color: 'bg-green-500/10 text-green-500', icon: '🚀' },
+  parallel_ensemble: { label: 'Ensemble', color: 'bg-orange-500/10 text-orange-500', icon: '🔀' },
+  group_chat: { label: 'Group Chat', color: 'bg-muted text-muted-foreground', icon: '💬' },
+};
+
+const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
+  sequential_pipeline: <span>→</span>,
+  cyclic: <RotateCcw className="h-3 w-3" />,
+  concurrent: <Users className="h-3 w-3" />,
+};
+
 export default function NewSession() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedRoomId = searchParams.get('roomId');
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState<RoomTemplate | null>(null);
+  const [step, setStep] = useState(preselectedRoomId ? 1 : 0);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const [formData, setFormData] = useState({
     topic: '',
     objective: '',
     selectedAgentIds: [] as string[],
-    maxRounds: 3,
+    maxRounds: 5,
   });
 
-  const { data: templates } = useQuery({
-    queryKey: ['room-templates'],
+  const { data: rooms } = useQuery({
+    queryKey: ['rooms'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('room_templates')
+        .from('rooms')
         .select('*')
-        .order('is_system', { ascending: false });
+        .order('is_system', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as RoomTemplate[];
+      return data as Room[];
     },
   });
 
@@ -66,19 +87,32 @@ export default function NewSession() {
     },
   });
 
-  const selectTemplate = (template: RoomTemplate) => {
-    setSelectedTemplate(template);
+  // Pre-select room if coming from rooms page
+  useEffect(() => {
+    if (preselectedRoomId && rooms) {
+      const room = rooms.find(r => r.id === preselectedRoomId);
+      if (room) {
+        selectRoom(room);
+      }
+    }
+  }, [preselectedRoomId, rooms]);
+
+  const selectRoom = (room: Room) => {
+    setSelectedRoom(room);
+    const objective = room.objective_template 
+      ? room.objective_template.replace('{topic}', formData.topic || '[topic]')
+      : '';
     setFormData({
       ...formData,
-      objective: template.objective || '',
-      selectedAgentIds: template.agent_ids,
-      maxRounds: template.max_rounds,
+      objective,
+      selectedAgentIds: room.agent_ids || [],
+      maxRounds: room.max_rounds,
     });
     setStep(1);
   };
 
-  const skipTemplate = () => {
-    setSelectedTemplate(null);
+  const skipRoom = () => {
+    setSelectedRoom(null);
     setStep(1);
   };
 
@@ -101,7 +135,7 @@ export default function NewSession() {
           objective: formData.objective || null,
           agent_config: agentConfig,
           max_rounds: formData.maxRounds,
-          room_template_id: selectedTemplate?.id || null,
+          room_id: selectedRoom?.id || null,
           status: 'draft',
         })
         .select()
@@ -111,11 +145,11 @@ export default function NewSession() {
       return data;
     },
     onSuccess: (data) => {
-      toast({ title: 'Session created' });
+      toast({ title: 'Sessione creata' });
       navigate(`/sessions/${data.id}`);
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create session', description: error.message, variant: 'destructive' });
+      toast({ title: 'Errore nella creazione', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -141,12 +175,15 @@ export default function NewSession() {
     ? formData.topic.trim().length > 0
     : formData.selectedAgentIds.length >= 2;
 
+  const systemRooms = rooms?.filter(r => r.is_system) || [];
+  const userRooms = rooms?.filter(r => !r.is_system) || [];
+
   return (
-    <AppLayout title="New Session">
+    <AppLayout title="Nuova Sessione">
       <div className="max-w-2xl">
         <Button variant="ghost" onClick={() => step === 0 ? navigate('/sessions') : setStep(step - 1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {step === 0 ? 'Back to Sessions' : 'Back'}
+          {step === 0 ? 'Torna alle Sessioni' : 'Indietro'}
         </Button>
 
         <div className="flex gap-2 mb-6">
@@ -158,49 +195,106 @@ export default function NewSession() {
         {step === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Choose a Template</CardTitle>
+              <CardTitle>Scegli una Room</CardTitle>
               <CardDescription>
-                Start with a pre-configured room or create a custom session
+                Seleziona una room con metodologia pre-configurata o crea una sessione personalizzata
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {templates && templates.length > 0 ? (
-                <div className="grid gap-3">
-                  {templates.map((template) => (
-                    <button
-                      key={template.id}
-                      onClick={() => selectTemplate(template)}
-                      className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent transition-colors"
-                    >
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <Layout className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium flex items-center gap-2">
-                          {template.name}
-                          {template.is_system && (
-                            <span className="text-xs bg-muted px-2 py-0.5 rounded">Template</span>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {template.description}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {template.agent_ids.length} agents • {template.max_rounds} rounds
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+            <CardContent className="space-y-6">
+              {/* Room Advisor CTA */}
+              <button
+                onClick={() => navigate('/rooms/advisor')}
+                className="w-full flex items-center gap-4 p-4 rounded-lg border border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+              >
+                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Sparkles className="h-6 w-6 text-primary" />
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No templates available
+                <div className="flex-1">
+                  <div className="font-medium text-primary">Non sai quale scegliere?</div>
+                  <div className="text-sm text-muted-foreground">
+                    Chiedi al Room Advisor AI di consigliarti la configurazione ideale
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary" />
+              </button>
+
+              {/* System Rooms */}
+              {systemRooms.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Metodologie Pre-configurate</h3>
+                  <div className="grid gap-3">
+                    {systemRooms.map((room) => {
+                      const methodology = METHODOLOGY_LABELS[room.methodology] || METHODOLOGY_LABELS.group_chat;
+                      return (
+                        <button
+                          key={room.id}
+                          onClick={() => selectRoom(room)}
+                          className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
+                        >
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-xl">
+                            {methodology.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium flex items-center gap-2">
+                              {room.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                              {room.description}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Badge className={methodology.color} variant="secondary">
+                                {methodology.label}
+                              </Badge>
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                {WORKFLOW_ICONS[room.workflow_type]}
+                                {room.max_rounds} rounds
+                              </Badge>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* User Rooms */}
+              {userRooms.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Le Mie Rooms</h3>
+                  <div className="grid gap-3">
+                    {userRooms.map((room) => {
+                      const methodology = METHODOLOGY_LABELS[room.methodology] || METHODOLOGY_LABELS.group_chat;
+                      return (
+                        <button
+                          key={room.id}
+                          onClick={() => selectRoom(room)}
+                          className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
+                        >
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <LayoutGrid className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{room.name}</div>
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {room.description}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Badge className={methodology.color} variant="secondary">
+                                {methodology.label}
+                              </Badge>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               <div className="border-t pt-4">
-                <Button variant="outline" onClick={skipTemplate} className="w-full">
-                  Create Custom Session
+                <Button variant="outline" onClick={skipRoom} className="w-full">
+                  Crea Sessione Personalizzata
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -211,36 +305,46 @@ export default function NewSession() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Define Your Topic</CardTitle>
+              <CardTitle>Definisci il Topic</CardTitle>
               <CardDescription>
-                {selectedTemplate 
-                  ? `Using template: ${selectedTemplate.name}`
-                  : 'What decision or topic do you want to deliberate on?'}
+                {selectedRoom 
+                  ? `Room: ${selectedRoom.name}`
+                  : 'Quale decisione o argomento vuoi deliberare?'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedTemplate && (
+              {selectedRoom && (
                 <div className="p-4 rounded-lg bg-muted/50 border mb-4">
-                  <div className="font-medium mb-1">{selectedTemplate.name}</div>
-                  <div className="text-sm text-muted-foreground">{selectedTemplate.description}</div>
+                  <div className="font-medium mb-1 flex items-center gap-2">
+                    <span className="text-lg">{METHODOLOGY_LABELS[selectedRoom.methodology]?.icon}</span>
+                    {selectedRoom.name}
+                  </div>
+                  <div className="text-sm text-muted-foreground">{selectedRoom.description}</div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="topic">Topic / Question</Label>
+                <Label htmlFor="topic">Topic / Domanda</Label>
                 <Input
                   id="topic"
-                  placeholder="e.g., Should we expand into the European market?"
+                  placeholder="es. Dovremmo espanderci nel mercato europeo?"
                   value={formData.topic}
-                  onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                  onChange={(e) => {
+                    const newTopic = e.target.value;
+                    let newObjective = formData.objective;
+                    if (selectedRoom?.objective_template) {
+                      newObjective = selectedRoom.objective_template.replace('{topic}', newTopic);
+                    }
+                    setFormData({ ...formData, topic: newTopic, objective: newObjective });
+                  }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="objective">Objective (optional)</Label>
+                <Label htmlFor="objective">Obiettivo (opzionale)</Label>
                 <Textarea
                   id="objective"
-                  placeholder="What specific outcome are you looking for?"
+                  placeholder="Quale risultato specifico stai cercando?"
                   value={formData.objective}
                   onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
                   rows={3}
@@ -248,7 +352,7 @@ export default function NewSession() {
               </div>
 
               <div className="space-y-2">
-                <Label>Number of Rounds</Label>
+                <Label>Numero di Round</Label>
                 <div className="flex gap-2">
                   {[3, 5, 7].map((num) => (
                     <Button
@@ -269,7 +373,7 @@ export default function NewSession() {
                 onClick={() => setStep(2)}
                 disabled={!canProceed}
               >
-                Next: Select Agents
+                Avanti: Seleziona Agenti
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardContent>
@@ -279,10 +383,10 @@ export default function NewSession() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Select Agents</CardTitle>
+              <CardTitle>Seleziona Agenti</CardTitle>
               <CardDescription>
-                Choose at least 2 agents to participate in the deliberation
-                {selectedTemplate && ` (pre-selected from template)`}
+                Scegli almeno 2 agenti per partecipare alla deliberazione
+                {selectedRoom && selectedRoom.agent_ids.length > 0 && ` (pre-selezionati dalla room)`}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -310,7 +414,7 @@ export default function NewSession() {
                       <div className="flex-1">
                         <div className="font-medium">{agent.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {agent.description || 'No description'}
+                          {agent.description || 'Nessuna descrizione'}
                         </div>
                       </div>
                     </label>
@@ -318,9 +422,9 @@ export default function NewSession() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No agents created yet.</p>
+                  <p>Nessun agente disponibile.</p>
                   <Button variant="link" onClick={() => navigate('/agents/new')}>
-                    Create your first agent
+                    Crea il tuo primo agente
                   </Button>
                 </div>
               )}
@@ -328,7 +432,7 @@ export default function NewSession() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  Indietro
                 </Button>
                 <Button
                   onClick={() => createMutation.mutate()}
@@ -336,7 +440,7 @@ export default function NewSession() {
                   className="flex-1"
                 >
                   <Play className="h-4 w-4 mr-2" />
-                  {createMutation.isPending ? 'Creating...' : 'Create Session'}
+                  {createMutation.isPending ? 'Creazione...' : 'Crea Sessione'}
                 </Button>
               </div>
             </CardContent>
