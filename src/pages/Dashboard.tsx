@@ -5,14 +5,18 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, History, Key, Play, LayoutGrid, FileEdit, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Bot, History, Key, Play, LayoutGrid, FileEdit, CheckCircle2, XCircle, Clock, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Session {
   id: string;
   topic: string;
+  objective: string | null;
   status: 'draft' | 'running' | 'completed' | 'cancelled';
+  current_round: number;
+  max_rounds: number;
   created_at: string;
 }
 
@@ -26,21 +30,25 @@ const statusConfig = {
     border: 'border-l-[hsl(var(--status-draft))]',
     icon: FileEdit,
     variant: 'outline' as const,
+    animate: '',
   },
   running: {
     border: 'border-l-[hsl(var(--status-running))]',
     icon: Play,
     variant: 'default' as const,
+    animate: 'animate-pulse',
   },
   completed: {
     border: 'border-l-[hsl(var(--status-completed))]',
     icon: CheckCircle2,
     variant: 'secondary' as const,
+    animate: '',
   },
   cancelled: {
     border: 'border-l-[hsl(var(--status-cancelled))]',
     icon: XCircle,
     variant: 'destructive' as const,
+    animate: '',
   },
 };
 
@@ -149,30 +157,63 @@ export default function Dashboard() {
                     const config = statusConfig[session.status];
                     const Icon = config.icon;
                     return (
-                      <Link
-                        key={session.id}
-                        to={`/sessions/${session.id}`}
-                        className={cn(
-                          "block p-3 rounded-lg border border-l-4 hover:bg-accent/50 transition-colors",
-                          config.border
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">
-                              {truncateText(session.topic, 60)}
+                      <HoverCard key={session.id} openDelay={300} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <Link
+                            to={`/sessions/${session.id}`}
+                            className={cn(
+                              "block p-3 rounded-lg border border-l-4 hover:bg-accent/50 transition-colors",
+                              config.border
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {truncateText(session.topic, 60)}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(session.created_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <Badge variant={config.variant} className={cn("gap-1 text-xs shrink-0", config.animate)}>
+                                <Icon className="h-3 w-3" />
+                                {t(`sessions.status.${session.status}`)}
+                              </Badge>
                             </div>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {new Date(session.created_at).toLocaleDateString()}
+                          </Link>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-72" side="right" align="start">
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-semibold text-sm">{t('sessions.topic')}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {session.topic}
+                              </p>
+                            </div>
+                            {session.objective && (
+                              <div>
+                                <h4 className="font-semibold text-sm flex items-center gap-1">
+                                  <Target className="h-3 w-3" />
+                                  {t('sessions.objective')}
+                                </h4>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {session.objective}
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <div className="text-xs text-muted-foreground">
+                                {t('sessions.round')} {session.current_round}/{session.max_rounds}
+                              </div>
+                              <Badge variant={config.variant} className={cn("gap-1 text-xs", config.animate)}>
+                                <Icon className="h-3 w-3" />
+                                {t(`sessions.status.${session.status}`)}
+                              </Badge>
                             </div>
                           </div>
-                          <Badge variant={config.variant} className="gap-1 text-xs shrink-0">
-                            <Icon className="h-3 w-3" />
-                            {t(`sessions.status.${session.status}`)}
-                          </Badge>
-                        </div>
-                      </Link>
+                        </HoverCardContent>
+                      </HoverCard>
                     );
                   })}
                 </div>

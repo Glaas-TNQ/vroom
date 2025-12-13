@@ -222,7 +222,9 @@
     "round": "Round",
     "of": "of",
     "created": "Created",
-    "agents": "agents"
+    "agents": "agents",
+    "topic": "Topic",
+    "objective": "Objective"
   },
   "sessionView": {
     "backToSessions": "Back to Sessions",
