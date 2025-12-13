@@ -129,15 +129,17 @@ export default function Rooms() {
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {systemRooms.map((room) => (
-                <Card key={room.id} className="hover:border-primary/50 transition-colors">
+                <Card key={room.id} className="hover:border-primary/50 transition-colors h-full flex flex-col">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {getRoomDisplayName(room)}
-                      <Badge variant="secondary" className="text-xs">{t('rooms.system')}</Badge>
+                    <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
+                      <span className="truncate">{getRoomDisplayName(room)}</span>
+                      <Badge variant="secondary" className="text-xs shrink-0">{t('rooms.system')}</Badge>
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">{getRoomDisplayDescription(room)}</CardDescription>
+                    <CardDescription className="line-clamp-2 min-h-[2.5rem]">
+                      {getRoomDisplayDescription(room)}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 mt-auto">
                     <div className="flex flex-wrap gap-2">
                       <Badge className={getMethodologyColor(room.methodology)}>
                         {getMethodologyLabel(room.methodology)}
@@ -168,12 +170,14 @@ export default function Rooms() {
             {userRooms.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {userRooms.map((room) => (
-                  <Card key={room.id} className="hover:border-primary/50 transition-colors">
+                  <Card key={room.id} className="hover:border-primary/50 transition-colors h-full flex flex-col">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{room.name}</CardTitle>
-                      <CardDescription className="line-clamp-2">{room.description}</CardDescription>
+                      <CardTitle className="text-lg truncate">{room.name}</CardTitle>
+                      <CardDescription className="line-clamp-2 min-h-[2.5rem]">
+                        {room.description || t('common.noDescription')}
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 mt-auto">
                       <div className="flex flex-wrap gap-2">
                         <Badge className={getMethodologyColor(room.methodology)}>
                           {getMethodologyLabel(room.methodology)}

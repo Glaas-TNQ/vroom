@@ -79,12 +79,12 @@ export default function Agents() {
         ) : agents && agents.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {agents.map((agent) => (
-              <Link key={agent.id} to={`/agents/${agent.id}`} className="block">
-                <Card className="relative group hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardHeader>
+              <Link key={agent.id} to={`/agents/${agent.id}`} className="block h-full">
+                <Card className="relative group hover:border-primary/50 transition-colors cursor-pointer h-full flex flex-col">
+                  <CardHeader className="flex-1">
                     <div className="flex items-start justify-between">
                       <div 
-                        className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl"
+                        className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
                         style={{ backgroundColor: agent.color + '20' }}
                       >
                         {iconMap[agent.icon] || '🤖'}
@@ -105,13 +105,15 @@ export default function Agents() {
                         </div>
                       )}
                     </div>
-                    <CardTitle className="flex items-center gap-2">
-                      {agent.name}
+                    <CardTitle className="flex items-center gap-2 flex-wrap">
+                      <span className="truncate">{agent.name}</span>
                       {agent.is_system && (
-                        <span className="text-xs bg-muted px-2 py-0.5 rounded font-normal">{t('agents.systemAgent')}</span>
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded font-normal shrink-0">{t('agents.systemAgent')}</span>
                       )}
                     </CardTitle>
-                    <CardDescription>{agent.description || t('common.noDescription')}</CardDescription>
+                    <CardDescription className="line-clamp-2 min-h-[2.5rem]">
+                      {agent.description || t('common.noDescription')}
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               </Link>
