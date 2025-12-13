@@ -267,14 +267,14 @@ export default function AgentBuilder() {
               <div className="space-y-2">
                 <Label>API Provider</Label>
                 <Select
-                  value={formData.provider_profile_id}
-                  onValueChange={(v) => setFormData({ ...formData, provider_profile_id: v })}
+                  value={formData.provider_profile_id || '__default__'}
+                  onValueChange={(v) => setFormData({ ...formData, provider_profile_id: v === '__default__' ? '' : v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Use Lovable AI (default)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Use Lovable AI (default)</SelectItem>
+                    <SelectItem value="__default__">Use Lovable AI (default)</SelectItem>
                     {providers?.map((provider) => (
                       <SelectItem key={provider.id} value={provider.id}>
                         {provider.name} ({provider.provider_type})
