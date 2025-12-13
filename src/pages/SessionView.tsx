@@ -3,15 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Play, Square, Download, Loader2, GripVertical, PanelRightClose, PanelRight } from 'lucide-react';
+import { ArrowLeft, Play, Square, Download, Loader2, PanelRightClose, PanelRight, FileText, ScrollText, ChevronDown } from 'lucide-react';
 import { Markdown } from '@/components/ui/markdown';
 
 interface AgentConfig {
@@ -29,6 +28,12 @@ interface TranscriptMessage {
   timestamp: string;
 }
 
+interface SessionResults {
+  final_report?: string;
+  methodology_used?: string;
+  generated_at?: string;
+}
+
 interface Session {
   id: string;
   topic: string;
@@ -36,7 +41,7 @@ interface Session {
   status: 'draft' | 'running' | 'completed' | 'cancelled';
   agent_config: AgentConfig[];
   transcript: TranscriptMessage[];
-  results: any;
+  results: SessionResults | null;
   action_items: any[];
   current_round: number;
   max_rounds: number;
@@ -52,6 +57,7 @@ export default function SessionView() {
   const queryClient = useQueryClient();
   const [isRunning, setIsRunning] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'report' | 'transcript'>('report');
 
   const { data: session, isLoading } = useQuery({
     queryKey: ['session', id],
@@ -68,6 +74,7 @@ export default function SessionView() {
         agent_config: (Array.isArray(data.agent_config) ? data.agent_config : []) as unknown as AgentConfig[],
         transcript: (Array.isArray(data.transcript) ? data.transcript : []) as unknown as TranscriptMessage[],
         action_items: (Array.isArray(data.action_items) ? data.action_items : []) as unknown as any[],
+        results: data.results as SessionResults | null,
       } as Session;
     },
     refetchInterval: isRunning ? 2000 : false,
@@ -76,7 +83,6 @@ export default function SessionView() {
   const runMutation = useMutation({
     mutationFn: async () => {
       setIsRunning(true);
-      // Get current locale
       const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
       const { data, error } = await supabase.functions.invoke('run-session', {
         body: { sessionId: id, locale },
@@ -110,27 +116,20 @@ export default function SessionView() {
     },
   });
 
-  const exportMarkdown = () => {
-    if (!session) return;
+  const exportReport = () => {
+    if (!session || !session.results?.final_report) return;
 
     let markdown = `# ${session.topic}\n\n`;
     if (session.objective) {
-      markdown += `## Objective\n${session.objective}\n\n`;
+      markdown += `> **${t('sessions.objective')}:** ${session.objective}\n\n`;
     }
-    
-    markdown += `## Deliberation Transcript\n\n`;
-    session.transcript.forEach((msg) => {
-      markdown += `### ${msg.agent_name} (Round ${msg.round})\n${msg.content}\n\n`;
-    });
-
-    if (session.results) {
-      markdown += `## Results\n${JSON.stringify(session.results, null, 2)}\n\n`;
-    }
+    markdown += `---\n\n`;
+    markdown += session.results.final_report;
 
     if (session.action_items && session.action_items.length > 0) {
-      markdown += `## Action Items\n`;
+      markdown += `\n\n---\n\n## ${t('sessionView.actionItems')}\n\n`;
       session.action_items.forEach((item: any, i: number) => {
-        markdown += `${i + 1}. ${item.title || item}\n`;
+        markdown += `${i + 1}. ${typeof item === 'string' ? item : item.title}\n`;
       });
     }
 
@@ -138,9 +137,53 @@ export default function SessionView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `vroom-session-${session.id.slice(0, 8)}.md`;
+    a.download = `vroom-report-${session.id.slice(0, 8)}.md`;
     a.click();
     URL.revokeObjectURL(url);
+    toast({ title: t('sessionView.reportExported') });
+  };
+
+  const exportFullSession = () => {
+    if (!session) return;
+
+    let markdown = `# ${session.topic}\n\n`;
+    if (session.objective) {
+      markdown += `> **${t('sessions.objective')}:** ${session.objective}\n\n`;
+    }
+    
+    markdown += `**${t('sessions.status.completed')}:** ${session.completed_at ? new Date(session.completed_at).toLocaleString() : '-'}\n\n`;
+    markdown += `---\n\n`;
+
+    // Final Report
+    if (session.results?.final_report) {
+      markdown += `## ${t('sessionView.finalReport')}\n\n`;
+      markdown += session.results.final_report;
+      markdown += `\n\n---\n\n`;
+    }
+
+    // Action Items
+    if (session.action_items && session.action_items.length > 0) {
+      markdown += `## ${t('sessionView.actionItems')}\n\n`;
+      session.action_items.forEach((item: any, i: number) => {
+        markdown += `${i + 1}. ${typeof item === 'string' ? item : item.title}\n`;
+      });
+      markdown += `\n---\n\n`;
+    }
+
+    // Full Transcript
+    markdown += `## ${t('sessionView.deliberationTranscript')}\n\n`;
+    session.transcript.forEach((msg) => {
+      markdown += `### ${msg.agent_name} (${t('sessions.round')} ${msg.round})\n\n${msg.content}\n\n`;
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vroom-session-full-${session.id.slice(0, 8)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: t('sessionView.sessionExported') });
   };
 
   const iconMap: Record<string, string> = {
@@ -178,6 +221,8 @@ export default function SessionView() {
     );
   }
 
+  const hasFinalReport = session.results?.final_report;
+
   return (
     <AppLayout title={t('sessions.view')}>
       <div className="h-[calc(100vh-8rem)] flex flex-col">
@@ -188,10 +233,27 @@ export default function SessionView() {
           </Button>
           <div className="flex gap-2">
             {session.status === 'completed' && (
-              <Button variant="outline" onClick={exportMarkdown}>
-                <Download className="h-4 w-4 mr-2" />
-                {t('sessionView.exportMarkdown')}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    {t('sessionView.export')}
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {hasFinalReport && (
+                    <DropdownMenuItem onClick={exportReport}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      {t('sessionView.exportReport')}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={exportFullSession}>
+                    <ScrollText className="h-4 w-4 mr-2" />
+                    {t('sessionView.exportFull')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {session.status === 'draft' && (
               <Button onClick={() => runMutation.mutate()} disabled={isRunning}>
@@ -213,7 +275,7 @@ export default function SessionView() {
         </div>
 
         <div className="flex-1 flex rounded-lg border overflow-hidden">
-          {/* Main Content - Deliberation */}
+          {/* Main Content */}
           <div className="flex-1 h-full flex flex-col min-w-0">
             {/* Session Header */}
             <div className="p-6 border-b bg-card">
@@ -245,62 +307,136 @@ export default function SessionView() {
               </div>
             </div>
 
-            {/* Deliberation Messages */}
-            <ScrollArea className="flex-1">
-              <div className="p-6">
-                {session.transcript.length > 0 ? (
-                  <div className="space-y-6">
-                    {session.transcript.map((msg, i) => {
-                      const agent = session.agent_config.find(a => a.id === msg.agent_id);
-                      const agentColor = agent?.color || '#6366f1';
-                      
-                      return (
-                        <div 
-                          key={i} 
-                          className="rounded-xl p-6 border-l-4 shadow-sm"
-                          style={{ 
-                            borderLeftColor: agentColor,
-                            backgroundColor: `${agentColor}06`
-                          }}
-                        >
-                          <div className="flex items-center gap-4 mb-4">
-                            <div
-                              className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
-                              style={{ backgroundColor: `${agentColor}20` }}
+            {/* Tabs for Report/Transcript */}
+            {session.status === 'completed' && hasFinalReport ? (
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'transcript')} className="flex-1 flex flex-col min-h-0">
+                <div className="border-b px-6 pt-2">
+                  <TabsList className="bg-transparent p-0 h-auto">
+                    <TabsTrigger 
+                      value="report" 
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-3 px-4"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      {t('sessionView.finalReport')}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="transcript" 
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-3 px-4"
+                    >
+                      <ScrollText className="h-4 w-4 mr-2" />
+                      {t('sessionView.deliberationTranscript')}
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="report" className="flex-1 m-0 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="p-6 max-w-4xl">
+                      <Markdown content={session.results.final_report} />
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="transcript" className="flex-1 m-0 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="p-6">
+                      <div className="space-y-6">
+                        {session.transcript.map((msg, i) => {
+                          const agent = session.agent_config.find(a => a.id === msg.agent_id);
+                          const agentColor = agent?.color || '#6366f1';
+                          
+                          return (
+                            <div 
+                              key={i} 
+                              className="rounded-xl p-6 border-l-4 shadow-sm"
+                              style={{ 
+                                borderLeftColor: agentColor,
+                                backgroundColor: `${agentColor}06`
+                              }}
                             >
-                              {iconMap[agent?.icon || 'bot'] || '🤖'}
+                              <div className="flex items-center gap-4 mb-4">
+                                <div
+                                  className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
+                                  style={{ backgroundColor: `${agentColor}20` }}
+                                >
+                                  {iconMap[agent?.icon || 'bot'] || '🤖'}
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-base">{msg.agent_name}</span>
+                                  <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                    {t('sessions.round')} {msg.round}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="pl-[3.75rem]">
+                                <Markdown content={msg.content} />
+                              </div>
                             </div>
-                            <div>
-                              <span className="font-semibold text-base">{msg.agent_name}</span>
-                              <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
-                                {t('sessions.round')} {msg.round}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="pl-[3.75rem]">
-                            <Markdown content={msg.content} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {isRunning && (
-                      <div className="flex items-center gap-3 text-muted-foreground p-6 bg-muted/30 rounded-xl">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm">{t('sessionView.agentsDeliberating')}</span>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    {session.status === 'draft' ? (
-                      <p className="text-lg">{t('sessionView.clickStart')}</p>
-                    ) : (
-                      <p className="text-lg">{t('sessionView.noMessages')}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              // Draft/Running/Cancelled or no report - show transcript
+              <ScrollArea className="flex-1">
+                <div className="p-6">
+                  {session.transcript.length > 0 ? (
+                    <div className="space-y-6">
+                      {session.transcript.map((msg, i) => {
+                        const agent = session.agent_config.find(a => a.id === msg.agent_id);
+                        const agentColor = agent?.color || '#6366f1';
+                        
+                        return (
+                          <div 
+                            key={i} 
+                            className="rounded-xl p-6 border-l-4 shadow-sm"
+                            style={{ 
+                              borderLeftColor: agentColor,
+                              backgroundColor: `${agentColor}06`
+                            }}
+                          >
+                            <div className="flex items-center gap-4 mb-4">
+                              <div
+                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
+                                style={{ backgroundColor: `${agentColor}20` }}
+                              >
+                                {iconMap[agent?.icon || 'bot'] || '🤖'}
+                              </div>
+                              <div>
+                                <span className="font-semibold text-base">{msg.agent_name}</span>
+                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                  {t('sessions.round')} {msg.round}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="pl-[3.75rem]">
+                              <Markdown content={msg.content} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {isRunning && (
+                        <div className="flex items-center gap-3 text-muted-foreground p-6 bg-muted/30 rounded-xl">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span className="text-sm">{t('sessionView.agentsDeliberating')}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 text-muted-foreground">
+                      {session.status === 'draft' ? (
+                        <p className="text-lg">{t('sessionView.clickStart')}</p>
+                      ) : (
+                        <p className="text-lg">{t('sessionView.noMessages')}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
           </div>
 
           {/* Collapsible Sidebar - Agents and Action Items */}

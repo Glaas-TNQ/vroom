@@ -469,59 +469,435 @@ serve(async (req) => {
       }
     }
 
-    // Generate action items with methodology-aware synthesis
+    // === FINAL SYNTHESIS PHASE ===
+    // After all rounds, generate a comprehensive final report with actionable deliverables
+    console.log("Generating final synthesis report...");
+    
     const isItalian = locale === 'it';
-    const synthesisPrompt = methodology === "analytical_structured" 
-      ? (isItalian 
-          ? "Usando il Principio della Piramide, sintetizza questa discussione in 3-5 azioni chiave, iniziando dalla raccomandazione più importante:"
-          : "Using the Pyramid Principle, synthesize this discussion into 3-5 key action items, starting with the most important recommendation:")
-      : methodology === "strategic_executive"
-      ? (isItalian
-          ? "Estrai 3-5 azioni strategiche allineate alle prospettive della balanced scorecard (finanziaria, cliente, processi, crescita):"
-          : "Extract 3-5 strategic action items aligned with the balanced scorecard perspectives (financial, customer, process, growth):")
-      : methodology === "lean_iterative"
-      ? (isItalian
-          ? "Identifica 3-5 ipotesi testabili e i prossimi esperimenti da eseguire:"
-          : "Identify 3-5 testable hypotheses and next experiments to run:")
-      : (isItalian
-          ? "Basandoti su questa deliberazione, estrai 3-5 azioni chiave:"
-          : "Based on this deliberation, extract 3-5 key action items:");
+    const transcriptSummary = transcript.map((m) => `**${m.agent_name}** (Round ${m.round}):\n${m.content}`).join("\n\n---\n\n");
+    
+    // Build the final report prompt based on methodology
+    const reportPromptByMethodology: Record<string, string> = {
+      analytical_structured: isItalian 
+        ? `Genera un RAPPORTO ESECUTIVO completo seguendo il Principio della Piramide McKinsey.
 
-    const summaryMessages = [
+## Struttura Richiesta:
+
+### 1. RACCOMANDAZIONE PRINCIPALE
+Una frase chiara che risponde alla domanda centrale.
+
+### 2. SINTESI ESECUTIVA
+3-4 punti chiave che supportano la raccomandazione (max 100 parole).
+
+### 3. ANALISI DELLE ARGOMENTAZIONI
+Per ogni prospettiva discussa:
+- Punto chiave
+- Evidenze/ragionamento
+- Implicazioni
+
+### 4. RISCHI E MITIGAZIONI
+Rischi identificati e strategie di mitigazione proposte.
+
+### 5. PIANO D'AZIONE
+Azioni concrete con:
+- Cosa fare
+- Chi è responsabile (ruolo suggerito)
+- Timeline suggerita
+- KPI/Metriche di successo
+
+### 6. PROSSIMI PASSI IMMEDIATI
+Le prime 3 azioni da intraprendere entro 7 giorni.`
+        : `Generate a complete EXECUTIVE REPORT following the McKinsey Pyramid Principle.
+
+## Required Structure:
+
+### 1. MAIN RECOMMENDATION
+A clear sentence answering the central question.
+
+### 2. EXECUTIVE SUMMARY
+3-4 key points supporting the recommendation (max 100 words).
+
+### 3. ARGUMENT ANALYSIS
+For each perspective discussed:
+- Key point
+- Evidence/reasoning
+- Implications
+
+### 4. RISKS AND MITIGATIONS
+Identified risks and proposed mitigation strategies.
+
+### 5. ACTION PLAN
+Concrete actions with:
+- What to do
+- Who is responsible (suggested role)
+- Suggested timeline
+- KPIs/Success metrics
+
+### 6. IMMEDIATE NEXT STEPS
+The first 3 actions to take within 7 days.`,
+      
+      strategic_executive: isItalian
+        ? `Genera un RAPPORTO STRATEGICO usando il framework Balanced Scorecard.
+
+## Struttura Richiesta:
+
+### 1. DECISIONE STRATEGICA
+Raccomandazione finale chiara e allineata agli obiettivi.
+
+### 2. IMPATTO PER PROSPETTIVA
+#### Finanziaria
+- Impatto atteso su ricavi/costi
+- ROI stimato
+
+#### Cliente
+- Impatto sulla proposta di valore
+- Effetti sulla soddisfazione
+
+#### Processi Interni
+- Cambiamenti operativi necessari
+- Efficienza attesa
+
+#### Apprendimento e Crescita
+- Competenze da sviluppare
+- Innovazioni da implementare
+
+### 3. OKR PROPOSTI
+3-5 Objectives con Key Results misurabili.
+
+### 4. PIANO DI IMPLEMENTAZIONE
+Fasi, milestone e responsabilità.
+
+### 5. PROSSIMI PASSI
+Azioni immediate per avviare l'implementazione.`
+        : `Generate a STRATEGIC REPORT using the Balanced Scorecard framework.
+
+## Required Structure:
+
+### 1. STRATEGIC DECISION
+Clear final recommendation aligned with objectives.
+
+### 2. IMPACT BY PERSPECTIVE
+#### Financial
+- Expected revenue/cost impact
+- Estimated ROI
+
+#### Customer
+- Impact on value proposition
+- Satisfaction effects
+
+#### Internal Processes
+- Required operational changes
+- Expected efficiency
+
+#### Learning and Growth
+- Skills to develop
+- Innovations to implement
+
+### 3. PROPOSED OKRs
+3-5 Objectives with measurable Key Results.
+
+### 4. IMPLEMENTATION PLAN
+Phases, milestones and responsibilities.
+
+### 5. NEXT STEPS
+Immediate actions to start implementation.`,
+
+      creative_brainstorming: isItalian
+        ? `Genera un RAPPORTO CREATIVO che cattura le idee generate.
+
+## Struttura Richiesta:
+
+### 1. CONCEPT VINCENTE
+L'idea principale emersa dalla sessione.
+
+### 2. IDEE CHIAVE
+Le 3-5 migliori idee con breve descrizione.
+
+### 3. MAPPA DELLE OPPORTUNITÀ
+Come le idee si collegano e potenziano a vicenda.
+
+### 4. CONCEPT BRIEF
+Per l'idea principale:
+- Descrizione del concept
+- Target audience
+- Value proposition
+- Differenziazione
+
+### 5. PROTOTIPO SUGGERITO
+Come testare rapidamente l'idea (MVP).
+
+### 6. PROSSIMI PASSI CREATIVI
+Azioni per sviluppare e validare le idee.`
+        : `Generate a CREATIVE REPORT capturing the generated ideas.
+
+## Required Structure:
+
+### 1. WINNING CONCEPT
+The main idea that emerged from the session.
+
+### 2. KEY IDEAS
+The 3-5 best ideas with brief descriptions.
+
+### 3. OPPORTUNITY MAP
+How ideas connect and enhance each other.
+
+### 4. CONCEPT BRIEF
+For the main idea:
+- Concept description
+- Target audience
+- Value proposition
+- Differentiation
+
+### 5. SUGGESTED PROTOTYPE
+How to quickly test the idea (MVP).
+
+### 6. CREATIVE NEXT STEPS
+Actions to develop and validate ideas.`,
+
+      lean_iterative: isItalian
+        ? `Genera un RAPPORTO LEAN con ipotesi testabili.
+
+## Struttura Richiesta:
+
+### 1. IPOTESI PRINCIPALE
+L'ipotesi core da validare.
+
+### 2. IPOTESI SECONDARIE
+Altre ipotesi identificate durante la discussione.
+
+### 3. PIANO DI ESPERIMENTI
+Per ogni ipotesi:
+- Esperimento proposto
+- Metrica di successo
+- Tempo stimato
+- Risorse necessarie
+
+### 4. MVP PROPOSTO
+Descrizione del prodotto minimo per validare.
+
+### 5. METRICHE DA MONITORARE
+KPI e criteri di successo/fallimento.
+
+### 6. PIVOT TRIGGERS
+Condizioni che indicherebbero necessità di cambiare direzione.
+
+### 7. PROSSIMO CICLO
+Azioni per il prossimo ciclo Build-Measure-Learn.`
+        : `Generate a LEAN REPORT with testable hypotheses.
+
+## Required Structure:
+
+### 1. MAIN HYPOTHESIS
+The core hypothesis to validate.
+
+### 2. SECONDARY HYPOTHESES
+Other hypotheses identified during discussion.
+
+### 3. EXPERIMENT PLAN
+For each hypothesis:
+- Proposed experiment
+- Success metric
+- Estimated time
+- Required resources
+
+### 4. PROPOSED MVP
+Description of minimum product to validate.
+
+### 5. METRICS TO MONITOR
+KPIs and success/failure criteria.
+
+### 6. PIVOT TRIGGERS
+Conditions indicating need to change direction.
+
+### 7. NEXT CYCLE
+Actions for the next Build-Measure-Learn cycle.`,
+
+      parallel_ensemble: isItalian
+        ? `Genera un RAPPORTO DI SINTESI MULTI-PROSPETTIVA.
+
+## Struttura Richiesta:
+
+### 1. VERDETTO CONSOLIDATO
+La conclusione che integra tutte le prospettive.
+
+### 2. SINTESI PER PROSPETTIVA
+Per ogni esperto:
+- Punto di vista chiave
+- Forza dell'argomentazione
+- Contributo unico
+
+### 3. AREE DI CONSENSO
+Punti su cui tutti gli esperti concordano.
+
+### 4. AREE DI DISSENSO
+Punti di divergenza e come risolverli.
+
+### 5. RACCOMANDAZIONE INTEGRATA
+Decisione che bilancia tutte le prospettive.
+
+### 6. PIANO D'AZIONE CONSOLIDATO
+Azioni concrete che tengono conto di tutti gli input.`
+        : `Generate a MULTI-PERSPECTIVE SYNTHESIS REPORT.
+
+## Required Structure:
+
+### 1. CONSOLIDATED VERDICT
+The conclusion integrating all perspectives.
+
+### 2. SYNTHESIS BY PERSPECTIVE
+For each expert:
+- Key viewpoint
+- Argument strength
+- Unique contribution
+
+### 3. AREAS OF CONSENSUS
+Points all experts agree on.
+
+### 4. AREAS OF DISSENT
+Points of divergence and how to resolve them.
+
+### 5. INTEGRATED RECOMMENDATION
+Decision balancing all perspectives.
+
+### 6. CONSOLIDATED ACTION PLAN
+Concrete actions considering all inputs.`,
+    };
+
+    const defaultReportPrompt = isItalian
+      ? `Genera un RAPPORTO FINALE completo.
+
+## Struttura Richiesta:
+
+### 1. SINTESI ESECUTIVA
+Risposta chiara alla domanda/topic principale.
+
+### 2. PUNTI CHIAVE
+I 3-5 insight più importanti emersi dalla discussione.
+
+### 3. RACCOMANDAZIONI
+Decisioni e azioni raccomandate.
+
+### 4. CONSIDERAZIONI
+Rischi, opportunità e fattori da monitorare.
+
+### 5. PIANO D'AZIONE
+Azioni concrete con priorità e timeline suggerite.
+
+### 6. PROSSIMI PASSI
+Le prime azioni immediate da intraprendere.`
+      : `Generate a complete FINAL REPORT.
+
+## Required Structure:
+
+### 1. EXECUTIVE SUMMARY
+Clear answer to the main question/topic.
+
+### 2. KEY POINTS
+The 3-5 most important insights from the discussion.
+
+### 3. RECOMMENDATIONS
+Recommended decisions and actions.
+
+### 4. CONSIDERATIONS
+Risks, opportunities, and factors to monitor.
+
+### 5. ACTION PLAN
+Concrete actions with suggested priorities and timeline.
+
+### 6. NEXT STEPS
+The first immediate actions to take.`;
+
+    const reportPrompt = reportPromptByMethodology[methodology] || defaultReportPrompt;
+
+    const finalReportMessages = [
       {
         role: "system",
         content: isItalian 
-          ? "Sei un esperto nel sintetizzare discussioni in azioni concrete. Rispondi in italiano."
-          : "You are an expert at synthesizing discussions into actionable items. Respond in English.",
+          ? `Sei un consulente strategico senior esperto nella sintesi di deliberazioni complesse in report esecutivi azionabili. 
+Il tuo compito è produrre un deliverable professionale che possa essere presentato direttamente al management.
+IMPORTANTE: Scrivi SEMPRE in italiano.`
+          : `You are a senior strategic consultant expert in synthesizing complex deliberations into actionable executive reports.
+Your task is to produce a professional deliverable that can be presented directly to management.
+IMPORTANT: ALWAYS write in English.`,
       },
       {
         role: "user",
-        content: `${synthesisPrompt}\n\nTopic: ${session.topic}\n\n${transcript.map((m) => `${m.agent_name}: ${m.content}`).join("\n\n")}\n\nReturn only a JSON array of strings, each being an action item.`,
+        content: `${reportPrompt}
+
+---
+
+## Topic della Deliberazione / Deliberation Topic
+${session.topic}
+
+${session.objective ? `## Obiettivo / Objective\n${session.objective}\n` : ""}
+
+## Trascrizione Completa / Full Transcript
+
+${transcriptSummary}
+
+---
+
+${isItalian ? "Genera il report completo seguendo ESATTAMENTE la struttura richiesta. Sii specifico, concreto e azionabile." : "Generate the complete report following EXACTLY the required structure. Be specific, concrete, and actionable."}`,
+      },
+    ];
+
+    let finalReport = "";
+    try {
+      finalReport = await callLovableAI(finalReportMessages, { 
+        max_tokens: 4096, 
+        temperature: 0.4 
+      } as Agent);
+      console.log("Final report generated successfully");
+    } catch (error) {
+      console.error("Failed to generate final report:", error);
+      finalReport = isItalian 
+        ? "Errore nella generazione del report finale. Consulta la trascrizione per i dettagli della deliberazione."
+        : "Error generating final report. Please consult the transcript for deliberation details.";
+    }
+
+    // Generate action items from the report
+    const actionItemsMessages = [
+      {
+        role: "system",
+        content: isItalian 
+          ? "Estrai le azioni concrete dal report. Rispondi SOLO con un array JSON di stringhe."
+          : "Extract concrete actions from the report. Reply ONLY with a JSON array of strings.",
+      },
+      {
+        role: "user",
+        content: `${isItalian ? "Estrai 3-7 azioni concrete e specifiche da questo report" : "Extract 3-7 concrete and specific actions from this report"}:\n\n${finalReport}\n\n${isItalian ? "Formato: [\"azione 1\", \"azione 2\", ...]" : "Format: [\"action 1\", \"action 2\", ...]"}`,
       },
     ];
 
     let actionItems: string[] = [];
     try {
-      const summaryContent = await callLovableAI(summaryMessages, { 
+      const actionItemsContent = await callLovableAI(actionItemsMessages, { 
         max_tokens: 1024, 
-        temperature: 0.3 
+        temperature: 0.2 
       } as Agent);
-      const match = summaryContent.match(/\[[\s\S]*\]/);
+      const match = actionItemsContent.match(/\[[\s\S]*\]/);
       if (match) actionItems = JSON.parse(match[0]);
     } catch (error) {
-      console.log("Failed to generate action items:", error);
+      console.log("Failed to extract action items:", error);
     }
 
-    // Complete session
+    // Complete session with final report
     await supabase
       .from("sessions")
       .update({
         status: "completed",
         transcript,
+        results: { 
+          final_report: finalReport,
+          methodology_used: methodology,
+          generated_at: new Date().toISOString()
+        },
         action_items: actionItems,
         completed_at: new Date().toISOString(),
       })
       .eq("id", sessionId);
+
+    console.log("Session completed with final report");
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
