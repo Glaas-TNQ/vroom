@@ -131,8 +131,14 @@ export default function AgentBuilder() {
     }
   }, [agent]);
 
+  const isSystemAgent = agent?.is_system === true;
+
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      if (isSystemAgent) {
+        throw new Error('System agents cannot be modified');
+      }
+      
       const payload = {
         user_id: user!.id,
         name: data.name,
@@ -320,10 +326,17 @@ export default function AgentBuilder() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
-                <Save className="h-4 w-4 mr-2" />
-                {saveMutation.isPending ? 'Saving...' : isEditing ? 'Update Agent' : 'Create Agent'}
-              </Button>
+              {!isSystemAgent && (
+                <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saveMutation.isPending ? 'Saving...' : isEditing ? 'Update Agent' : 'Create Agent'}
+                </Button>
+              )}
+              {isSystemAgent && (
+                <p className="text-sm text-muted-foreground text-center">
+                  System agents are read-only and cannot be modified
+                </p>
+              )}
             </form>
           </CardContent>
         </Card>
