@@ -73,6 +73,89 @@ export type Database = {
           },
         ]
       }
+      one_on_one_messages: {
+        Row: {
+          agent_color: string | null
+          agent_id: string | null
+          agent_name: string | null
+          content: string
+          created_at: string
+          id: string
+          role: string
+          session_id: string
+        }
+        Insert: {
+          agent_color?: string | null
+          agent_id?: string | null
+          agent_name?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          session_id: string
+        }
+        Update: {
+          agent_color?: string | null
+          agent_id?: string | null
+          agent_name?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_on_one_messages_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_on_one_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "one_on_one_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      one_on_one_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          last_agent_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_agent_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_agent_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_on_one_sessions_last_agent_id_fkey"
+            columns: ["last_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

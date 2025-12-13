@@ -115,7 +115,12 @@
     "startChat": "Inizia una conversazione con questo agente",
     "placeholder": "Scrivi il tuo messaggio...",
     "thinking": "Sto pensando...",
+    "newChat": "Nuova Chat",
     "newSession": "Nuova Sessione",
+    "history": "Cronologia",
+    "chatHistory": "Cronologia Chat",
+    "noHistory": "Nessuna chat precedente",
+    "sessionDeleted": "Chat eliminata",
     "error": "Si è verificato un errore. Riprova."
   },
   "rooms": {

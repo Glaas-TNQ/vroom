@@ -115,7 +115,12 @@
     "startChat": "Start a conversation with this agent",
     "placeholder": "Type your message...",
     "thinking": "Thinking...",
+    "newChat": "New Chat",
     "newSession": "New Session",
+    "history": "History",
+    "chatHistory": "Chat History",
+    "noHistory": "No previous chats",
+    "sessionDeleted": "Chat deleted",
     "error": "An error occurred. Please try again."
   },
   "rooms": {
