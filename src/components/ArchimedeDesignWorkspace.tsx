@@ -61,6 +61,7 @@ interface ArchimedeDesignWorkspaceProps {
   archimedePrompt: string | undefined;
   onApply: (spec: RoomSpec) => void;
   onCancel: () => void;
+  initialDescription?: string;
 }
 
 const METHODOLOGY_COLORS: Record<string, string> = {
@@ -81,12 +82,13 @@ export default function ArchimedeDesignWorkspace({
   archimedePrompt,
   onApply,
   onCancel,
+  initialDescription = '',
 }: ArchimedeDesignWorkspaceProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(initialDescription);
   const [isDesigning, setIsDesigning] = useState(false);
   const [designedRoom, setDesignedRoom] = useState<RoomSpec | null>(null);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
