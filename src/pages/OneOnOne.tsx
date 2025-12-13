@@ -13,7 +13,7 @@ import { Markdown } from '@/components/ui/markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Loader2, Bot, User, Plus, History, Trash2 } from 'lucide-react';
+import { Send, Loader2, Bot, User, Plus, History, Trash2, Settings2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Message {
@@ -37,6 +37,13 @@ interface Agent {
   unlimited_tokens: boolean;
   is_system: boolean;
   provider_profile_id: string | null;
+}
+
+interface ProviderProfile {
+  id: string;
+  name: string;
+  provider_type: string;
+  model: string | null;
 }
 
 interface ChatSession {
@@ -65,6 +72,7 @@ export default function OneOnOne() {
   
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(searchParams.get('session'));
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +90,20 @@ export default function OneOnOne() {
         .order('name');
       if (error) throw error;
       return data as Agent[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch provider profiles
+  const { data: providers } = useQuery({
+    queryKey: ['provider-profiles-for-chat'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('provider_profiles')
+        .select('id, name, provider_type, model')
+        .order('name');
+      if (error) throw error;
+      return data as ProviderProfile[];
     },
     enabled: !!user,
   });
@@ -154,6 +176,7 @@ export default function OneOnOne() {
   }, [currentSessionId, setSearchParams]);
 
   const selectedAgent = agents?.find((a) => a.id === selectedAgentId);
+  const selectedProvider = providers?.find((p) => p.id === selectedProviderId);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -258,6 +281,7 @@ export default function OneOnOne() {
           agentId: selectedAgent.id,
           message: userMessage.content,
           history: conversationHistory,
+          providerOverrideId: selectedProviderId || undefined,
         },
       });
 
@@ -323,7 +347,7 @@ export default function OneOnOne() {
   return (
     <AppLayout title={t('oneOnOne.title')}>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
-        {/* Header with agent selector and history */}
+        {/* Header with agent selector, provider selector, and history */}
         <div className="flex items-center gap-4 mb-4 flex-wrap">
           <div className="flex-1 min-w-[200px] max-w-md">
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
@@ -339,6 +363,29 @@ export default function OneOnOne() {
                       {agent.is_system && (
                         <span className="text-xs text-muted-foreground">({t('agents.systemAgent')})</span>
                       )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Provider override selector */}
+          <div className="min-w-[180px]">
+            <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+              <SelectTrigger>
+                <Settings2 className="h-4 w-4 mr-2" />
+                <SelectValue placeholder={t('oneOnOne.defaultProvider')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">
+                  {t('oneOnOne.defaultProvider')}
+                </SelectItem>
+                {providers?.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{provider.name}</span>
+                      <span className="text-xs text-muted-foreground">({provider.provider_type})</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -421,6 +468,11 @@ export default function OneOnOne() {
                 <p className="text-sm text-center max-w-md">
                   {selectedAgent?.description || t('oneOnOne.startChat')}
                 </p>
+                {selectedProvider && (
+                  <p className="text-xs text-muted-foreground">
+                    Using: {selectedProvider.name} ({selectedProvider.provider_type})
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

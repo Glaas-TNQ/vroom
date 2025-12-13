@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthPage from "./pages/Auth";
@@ -23,31 +24,33 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
-            <Route path="/agents/new" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
-            <Route path="/agents/:id" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
-            <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
-            <Route path="/rooms/new" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
-            <Route path="/rooms/advisor" element={<ProtectedRoute><RoomAdvisor /></ProtectedRoute>} />
-            <Route path="/rooms/:id" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
-            <Route path="/one-on-one" element={<ProtectedRoute><OneOnOne /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
-            <Route path="/sessions/new" element={<ProtectedRoute><NewSession /></ProtectedRoute>} />
-            <Route path="/sessions/:id" element={<ProtectedRoute><SessionView /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
+              <Route path="/agents/new" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
+              <Route path="/agents/:id" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
+              <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+              <Route path="/rooms/new" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
+              <Route path="/rooms/advisor" element={<ProtectedRoute><RoomAdvisor /></ProtectedRoute>} />
+              <Route path="/rooms/:id" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
+              <Route path="/one-on-one" element={<ProtectedRoute><OneOnOne /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
+              <Route path="/sessions/new" element={<ProtectedRoute><NewSession /></ProtectedRoute>} />
+              <Route path="/sessions/:id" element={<ProtectedRoute><SessionView /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
