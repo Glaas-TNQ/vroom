@@ -14,17 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAgents, Agent } from '@/hooks/useAgents';
 import { RoomAdvisorDialog } from '@/components/RoomAdvisorDialog';
 import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users, Zap } from 'lucide-react';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  color: string;
-  provider_profile_id: string | null;
-}
 
 interface ProviderProfile {
   id: string;
@@ -118,14 +110,7 @@ export default function NewSession() {
     },
   });
 
-  const { data: agents } = useQuery({
-    queryKey: ['agents'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('agents').select('*');
-      if (error) throw error;
-      return data as Agent[];
-    },
-  });
+  const { data: agents } = useAgents();
 
   const { data: providerProfiles } = useQuery({
     queryKey: ['provider-profiles'],

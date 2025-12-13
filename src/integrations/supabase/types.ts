@@ -26,6 +26,7 @@ export type Database = {
           max_tokens: number
           name: string
           provider_profile_id: string | null
+          source_system_agent_id: string | null
           system_prompt: string
           temperature: number
           unlimited_tokens: boolean | null
@@ -43,6 +44,7 @@ export type Database = {
           max_tokens?: number
           name: string
           provider_profile_id?: string | null
+          source_system_agent_id?: string | null
           system_prompt: string
           temperature?: number
           unlimited_tokens?: boolean | null
@@ -60,6 +62,7 @@ export type Database = {
           max_tokens?: number
           name?: string
           provider_profile_id?: string | null
+          source_system_agent_id?: string | null
           system_prompt?: string
           temperature?: number
           unlimited_tokens?: boolean | null
@@ -79,6 +82,13 @@ export type Database = {
             columns: ["provider_profile_id"]
             isOneToOne: false
             referencedRelation: "provider_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agents_source_system_agent_id_fkey"
+            columns: ["source_system_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
             referencedColumns: ["id"]
           },
         ]

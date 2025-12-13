@@ -179,15 +179,48 @@ export default function AgentBuilder() {
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (isEditing && isSystemAgent) {
-        // For system agents, only update appearance and provider
-        const systemPayload = {
+        // For system agents, create a user-specific copy instead of modifying the global one
+        // Check if user already has a personalized copy of this system agent
+        const { data: existingCopy } = await supabase
+          .from('agents')
+          .select('id')
+          .eq('user_id', user!.id)
+          .eq('source_system_agent_id', id)
+          .single();
+
+        const personalizedPayload = {
+          user_id: user!.id,
+          name: agent!.name, // Keep original name
+          description: agent!.description,
           icon: data.icon,
           color: data.color,
           avatar_url: data.avatar_url,
+          system_prompt: agent!.system_prompt, // Keep original system prompt
           provider_profile_id: data.provider_profile_id || null,
+          temperature: Number(agent!.temperature),
+          max_tokens: agent!.max_tokens,
+          unlimited_tokens: (agent as any).unlimited_tokens || false,
+          is_system: false,
+          source_system_agent_id: id, // Track which system agent this came from
         };
-        const { error } = await supabase.from('agents').update(systemPayload).eq('id', id);
-        if (error) throw error;
+
+        if (existingCopy) {
+          // Update existing personalized copy
+          const { error } = await supabase
+            .from('agents')
+            .update({
+              icon: data.icon,
+              color: data.color,
+              avatar_url: data.avatar_url,
+              provider_profile_id: data.provider_profile_id || null,
+            })
+            .eq('id', existingCopy.id);
+          if (error) throw error;
+        } else {
+          // Create new personalized copy
+          const { error } = await supabase.from('agents').insert(personalizedPayload);
+          if (error) throw error;
+        }
       } else {
         const payload = {
           user_id: user!.id,
