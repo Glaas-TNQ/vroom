@@ -89,6 +89,8 @@
     "systemAgent": "System",
     "customAgent": "Custom Agent",
     "systemAgentReadOnly": "System agents are read-only and cannot be modified",
+    "systemAgentProviderHint": "You can only change the provider for system agents",
+    "saveProvider": "Save Provider",
     "duplicate": "Duplicate as Custom Agent",
     "duplicated": "Agent duplicated",
     "deleted": "Agent deleted",
