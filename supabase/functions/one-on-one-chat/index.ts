@@ -23,8 +23,7 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -112,17 +111,19 @@ serve(async (req) => {
     // Determine max tokens
     const maxTokens = agent.unlimited_tokens ? undefined : agent.max_tokens;
 
-    let response: string;
-
-    // Priority: override provider > agent's provider > Lovable AI
-    if (overrideProvider) {
-      response = await callProviderAPI(overrideProvider, messages, agent.temperature, maxTokens);
-    } else if (agent.provider_profile_id && agentProvider) {
-      response = await callProviderAPI(agentProvider, messages, agent.temperature, maxTokens);
-    } else {
-      // Use Lovable AI
-      response = await callLovableAI(lovableApiKey!, messages, agent.temperature, maxTokens);
+    // Determine which provider to use
+    const provider = overrideProvider || agentProvider;
+    
+    if (!provider) {
+      return new Response(JSON.stringify({ 
+        error: 'No API provider configured. Please configure a provider in Settings or select one for this agent.' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    const response = await callProviderAPI(provider, messages, agent.temperature, maxTokens);
 
     return new Response(JSON.stringify({ response }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -137,47 +138,6 @@ serve(async (req) => {
     });
   }
 });
-
-async function callLovableAI(
-  apiKey: string,
-  messages: ChatMessage[],
-  temperature: number,
-  maxTokens?: number
-): Promise<string> {
-  const body: Record<string, unknown> = {
-    model: 'google/gemini-2.5-flash',
-    messages: messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
-    temperature,
-  };
-
-  if (maxTokens) {
-    body.max_tokens = maxTokens;
-  }
-
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.');
-    }
-    if (response.status === 402) {
-      throw new Error('Payment required. Please add credits to continue.');
-    }
-    const text = await response.text();
-    console.error('Lovable AI error:', response.status, text);
-    throw new Error('AI request failed');
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || 'No response generated';
-}
 
 async function callProviderAPI(
   provider: { provider_type: string; api_key: string; endpoint?: string; model?: string },
