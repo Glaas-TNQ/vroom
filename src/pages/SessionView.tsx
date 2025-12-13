@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ interface Session {
 }
 
 export default function SessionView() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -79,11 +81,11 @@ export default function SessionView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session', id] });
       setIsRunning(false);
-      toast({ title: 'Session completed' });
+      toast({ title: t('sessions.completed') });
     },
     onError: (error: Error) => {
       setIsRunning(false);
-      toast({ title: 'Session failed', description: error.message, variant: 'destructive' });
+      toast({ title: t('sessions.failed'), description: error.message, variant: 'destructive' });
     },
   });
 
@@ -98,7 +100,7 @@ export default function SessionView() {
     onSuccess: () => {
       setIsRunning(false);
       queryClient.invalidateQueries({ queryKey: ['session', id] });
-      toast({ title: 'Session stopped' });
+      toast({ title: t('sessions.stopped') });
     },
   });
 
@@ -151,38 +153,38 @@ export default function SessionView() {
       completed: 'secondary',
       cancelled: 'destructive',
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status]}>{t(`sessions.status.${status}`)}</Badge>;
   };
 
   if (isLoading) {
     return (
-      <AppLayout title="Session">
-        <div className="text-center py-12 text-muted-foreground">Loading session...</div>
+      <AppLayout title={t('sessions.view')}>
+        <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
       </AppLayout>
     );
   }
 
   if (!session) {
     return (
-      <AppLayout title="Session">
-        <div className="text-center py-12 text-muted-foreground">Session not found</div>
+      <AppLayout title={t('sessions.view')}>
+        <div className="text-center py-12 text-muted-foreground">{t('sessionView.notFound')}</div>
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Session">
+    <AppLayout title={t('sessions.view')}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Sessions
+            {t('sessionView.backToSessions')}
           </Button>
           <div className="flex gap-2">
             {session.status === 'completed' && (
               <Button variant="outline" onClick={exportMarkdown}>
                 <Download className="h-4 w-4 mr-2" />
-                Export Markdown
+                {t('sessionView.exportMarkdown')}
               </Button>
             )}
             {session.status === 'draft' && (
@@ -192,13 +194,13 @@ export default function SessionView() {
                 ) : (
                   <Play className="h-4 w-4 mr-2" />
                 )}
-                {isRunning ? 'Running...' : 'Start Session'}
+                {isRunning ? t('common.running') : t('sessionView.startSession')}
               </Button>
             )}
             {session.status === 'running' && (
               <Button variant="destructive" onClick={() => stopMutation.mutate()}>
                 <Square className="h-4 w-4 mr-2" />
-                Stop
+                {t('common.stop')}
               </Button>
             )}
           </div>
@@ -218,16 +220,16 @@ export default function SessionView() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4 text-sm text-muted-foreground">
-                  <span>Round {session.current_round} of {session.max_rounds}</span>
+                  <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
                   <span>•</span>
-                  <span>{session.agent_config.length} agents</span>
+                  <span>{session.agent_config.length} {t('sessions.agents')}</span>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Deliberation</CardTitle>
+                <CardTitle>{t('sessionView.deliberation')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {session.transcript.length > 0 ? (
@@ -247,7 +249,7 @@ export default function SessionView() {
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-medium">{msg.agent_name}</span>
                                 <span className="text-xs text-muted-foreground">
-                                  Round {msg.round}
+                                  {t('sessions.round')} {msg.round}
                                 </span>
                               </div>
                               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -258,7 +260,7 @@ export default function SessionView() {
                       {isRunning && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Agents are deliberating...</span>
+                          <span>{t('sessionView.agentsDeliberating')}</span>
                         </div>
                       )}
                     </div>
@@ -266,9 +268,9 @@ export default function SessionView() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     {session.status === 'draft' ? (
-                      <p>Click "Start Session" to begin the deliberation</p>
+                      <p>{t('sessionView.clickStart')}</p>
                     ) : (
-                      <p>No messages yet</p>
+                      <p>{t('sessionView.noMessages')}</p>
                     )}
                   </div>
                 )}
@@ -279,7 +281,7 @@ export default function SessionView() {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Agents</CardTitle>
+                <CardTitle>{t('nav.agents')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -301,7 +303,7 @@ export default function SessionView() {
             {session.action_items && session.action_items.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Action Items</CardTitle>
+                  <CardTitle>{t('sessionView.actionItems')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">

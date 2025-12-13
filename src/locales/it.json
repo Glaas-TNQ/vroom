@@ -15,7 +15,16 @@
     "success": "Successo",
     "confirm": "Conferma",
     "yes": "Sì",
-    "no": "No"
+    "no": "No",
+    "view": "Visualizza",
+    "start": "Avvia",
+    "stop": "Ferma",
+    "test": "Test",
+    "default": "Default",
+    "setDefault": "Imposta Default",
+    "adding": "Aggiunta...",
+    "running": "In esecuzione...",
+    "noDescription": "Nessuna descrizione"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -35,8 +44,32 @@
     "noAccount": "Non hai un account?",
     "hasAccount": "Hai già un account?"
   },
+  "dashboard": {
+    "welcome": "Benvenuto in Vroom",
+    "subtitle": "Piattaforma di deliberazione strategica basata su AI",
+    "startSession": "Avvia Sessione",
+    "aiAgents": "Agenti AI",
+    "configuredAgents": "Agenti configurati",
+    "sessions": "Sessioni",
+    "totalDeliberations": "Deliberazioni totali",
+    "apiProviders": "Provider API",
+    "connectedProviders": "Provider connessi",
+    "recentSessions": "Sessioni Recenti",
+    "recentSessionsDesc": "Le tue ultime sessioni di deliberazione",
+    "noSessions": "Nessuna sessione",
+    "startFirst": "Inizia la tua prima sessione",
+    "quickSetup": "Configurazione Rapida",
+    "quickSetupDesc": "Inizia con Vroom",
+    "configureProviders": "Configura Provider API",
+    "configureProvidersDesc": "Aggiungi i tuoi endpoint OpenAI, Anthropic o personalizzati",
+    "createAgent": "Crea un Agente",
+    "createAgentDesc": "Costruisci agenti AI specializzati per le tue deliberazioni",
+    "startASession": "Avvia una Sessione",
+    "startASessionDesc": "Esegui una deliberazione multi-agente sul tuo argomento"
+  },
   "agents": {
-    "title": "Agenti",
+    "title": "Agenti AI",
+    "subtitle": "Crea e gestisci agenti AI specializzati per le deliberazioni",
     "create": "Crea Agente",
     "edit": "Modifica Agente",
     "builder": "Costruttore Agenti",
@@ -52,13 +85,16 @@
     "temperature": "Temperature",
     "temperatureHint": "Più basso = più concentrato, Più alto = più creativo",
     "maxTokens": "Token Massimi",
-    "systemAgent": "Agente di Sistema",
+    "systemAgent": "Sistema",
     "customAgent": "Agente Personalizzato",
     "systemAgentReadOnly": "Gli agenti di sistema sono in sola lettura e non possono essere modificati",
     "duplicate": "Duplica come Agente Personalizzato",
     "duplicated": "Agente duplicato",
-    "noAgents": "Nessun agente creato",
-    "createFirst": "Crea il tuo primo agente"
+    "deleted": "Agente eliminato",
+    "noAgents": "Nessun agente",
+    "noAgentsDesc": "Crea il tuo primo agente AI per iniziare a costruire team di deliberazione",
+    "createFirst": "Crea il tuo primo agente",
+    "configure": "Configura la personalità e le capacità del tuo agente AI"
   },
   "rooms": {
     "title": "Stanze",
@@ -92,7 +128,8 @@
     "tavilyDesc": "Ricerca web veloce per fatti e news",
     "objectiveTemplate": "Template Obiettivo",
     "objectiveTemplateDesc": "Definisci un template per l'obiettivo delle sessioni. Usa {topic} come placeholder.",
-    "systemRoomReadOnly": "Le stanze di sistema sono in sola lettura. Puoi usarle come base per creare le tue."
+    "systemRoomReadOnly": "Le stanze di sistema sono in sola lettura. Puoi usarle come base per creare le tue.",
+    "deleted": "Stanza eliminata"
   },
   "methodologies": {
     "analytical_structured": {
@@ -136,17 +173,37 @@
   },
   "sessions": {
     "title": "Sessioni",
+    "subtitle": "Visualizza e gestisci le tue sessioni di deliberazione",
     "create": "Nuova Sessione",
     "view": "Visualizza Sessione",
     "start": "Avvia",
     "noSessions": "Nessuna sessione",
-    "createFirst": "Crea la tua prima sessione per iniziare a deliberare",
+    "createFirst": "Avvia la tua prima sessione di deliberazione",
+    "deleted": "Sessione eliminata",
+    "completed": "Sessione completata",
+    "failed": "Sessione fallita",
+    "stopped": "Sessione fermata",
     "status": {
       "draft": "Bozza",
       "running": "In Corso",
       "completed": "Completata",
-      "failed": "Fallita"
-    }
+      "cancelled": "Annullata"
+    },
+    "round": "Round",
+    "of": "di",
+    "created": "Creata",
+    "agents": "agenti"
+  },
+  "sessionView": {
+    "backToSessions": "Torna alle Sessioni",
+    "exportMarkdown": "Esporta Markdown",
+    "startSession": "Avvia Sessione",
+    "deliberation": "Deliberazione",
+    "clickStart": "Clicca \"Avvia Sessione\" per iniziare la deliberazione",
+    "noMessages": "Nessun messaggio",
+    "agentsDeliberating": "Gli agenti stanno deliberando...",
+    "actionItems": "Action Items",
+    "notFound": "Sessione non trovata"
   },
   "newSession": {
     "title": "Nuova Sessione",
@@ -186,7 +243,28 @@
   "settings": {
     "title": "Impostazioni",
     "providers": "Provider API",
+    "providersDesc": "Gestisci le configurazioni dei tuoi provider AI (BYOK)",
     "addProvider": "Aggiungi Provider",
-    "testConnection": "Testa Connessione"
+    "addProviderDesc": "Configura un nuovo provider AI con la tua chiave API",
+    "profileName": "Nome Profilo",
+    "providerType": "Tipo Provider",
+    "apiKey": "Chiave API",
+    "customEndpoint": "Endpoint Personalizzato",
+    "defaultModel": "Modello Default",
+    "selectModel": "Seleziona un modello",
+    "configuredProviders": "Provider Configurati",
+    "configuredProvidersDesc": "Le tue chiavi API sono memorizzate in modo sicuro e usate per le interazioni degli agenti",
+    "noProviders": "Nessun provider configurato",
+    "noProvidersDesc": "Aggiungi il tuo primo provider API per iniziare",
+    "providerAdded": "Provider aggiunto con successo",
+    "providerDeleted": "Provider eliminato",
+    "defaultUpdated": "Provider default aggiornato",
+    "connectionSuccess": "Connessione riuscita",
+    "connectionSuccessDesc": "Chiave API valida",
+    "connectionFailed": "Connessione fallita",
+    "testFailed": "Test connessione fallito",
+    "language": "Lingua",
+    "languageDesc": "Scegli la tua lingua preferita",
+    "preferences": "Preferenze"
   }
 }

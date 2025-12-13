@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Key, Plus, Trash2, Check, Loader2 } from 'lucide-react';
+import { Key, Plus, Trash2, Check, Loader2, Globe } from 'lucide-react';
 
 type ProviderType = 'openai' | 'anthropic' | 'perplexity' | 'tavily' | 'custom';
 
@@ -24,7 +25,6 @@ interface ProviderProfile {
   is_default: boolean;
 }
 
-// Models updated as of December 2025 (from official docs)
 const OPENAI_MODELS = [
   { value: 'gpt-5', label: 'GPT-5 (Latest)' },
   { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
@@ -37,7 +37,6 @@ const OPENAI_MODELS = [
   { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' },
 ];
 
-// Anthropic models from official docs - December 2025
 const ANTHROPIC_MODELS = [
   { value: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Premium)' },
   { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Smart)' },
@@ -47,7 +46,6 @@ const ANTHROPIC_MODELS = [
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Snapshot)' },
 ];
 
-// Perplexity Sonar models - December 2025
 const PERPLEXITY_MODELS = [
   { value: 'sonar', label: 'Sonar (Fast Search)' },
   { value: 'sonar-pro', label: 'Sonar Pro (Multi-step Reasoning)' },
@@ -56,13 +54,18 @@ const PERPLEXITY_MODELS = [
   { value: 'sonar-deep-research', label: 'Sonar Deep Research (Expert)' },
 ];
 
-// Tavily is a search API, not a model-based service
 const TAVILY_MODELS = [
   { value: 'search', label: 'Search API' },
   { value: 'extract', label: 'Extract API' },
 ];
 
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'it', label: 'Italiano' },
+];
+
 export default function Settings() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -115,10 +118,10 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['provider-profiles'] });
       setIsDialogOpen(false);
       setFormData({ name: '', provider_type: 'openai', api_key: '', endpoint: '', model: '' });
-      toast({ title: 'Provider added successfully' });
+      toast({ title: t('settings.providerAdded') });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add provider', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     },
   });
 
@@ -129,7 +132,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-profiles'] });
-      toast({ title: 'Provider deleted' });
+      toast({ title: t('settings.providerDeleted') });
     },
   });
 
@@ -141,7 +144,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-profiles'] });
-      toast({ title: 'Default provider updated' });
+      toast({ title: t('settings.defaultUpdated') });
     },
   });
 
@@ -159,12 +162,12 @@ export default function Settings() {
       
       if (error) throw error;
       if (data?.success) {
-        toast({ title: 'Connection successful', description: 'API key is valid' });
+        toast({ title: t('settings.connectionSuccess'), description: t('settings.connectionSuccessDesc') });
       } else {
-        toast({ title: 'Connection failed', description: data?.error || 'Unknown error', variant: 'destructive' });
+        toast({ title: t('settings.connectionFailed'), description: data?.error || 'Unknown error', variant: 'destructive' });
       }
     } catch (error: any) {
-      toast({ title: 'Connection test failed', description: error.message, variant: 'destructive' });
+      toast({ title: t('settings.testFailed'), description: error.message, variant: 'destructive' });
     } finally {
       setTestingId(null);
     }
@@ -173,6 +176,11 @@ export default function Settings() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createMutation.mutate(formData);
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('i18nextLng', lang);
   };
 
   const getProviderIcon = (type: ProviderType) => {
@@ -186,28 +194,61 @@ export default function Settings() {
   };
 
   return (
-    <AppLayout title="Settings">
+    <AppLayout title={t('settings.title')}>
       <div className="max-w-3xl space-y-6">
+        {/* Language Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {t('settings.preferences')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>{t('settings.language')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.languageDesc')}</p>
+                </div>
+                <Select value={i18n.language} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* API Providers */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">API Providers</h1>
-            <p className="text-muted-foreground">Manage your AI provider configurations (BYOK)</p>
+            <h2 className="text-2xl font-bold">{t('settings.providers')}</h2>
+            <p className="text-muted-foreground">{t('settings.providersDesc')}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Provider
+                {t('settings.addProvider')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add API Provider</DialogTitle>
-                <DialogDescription>Configure a new AI provider with your API key</DialogDescription>
+                <DialogTitle>{t('settings.addProvider')}</DialogTitle>
+                <DialogDescription>{t('settings.addProviderDesc')}</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Profile Name</Label>
+                  <Label htmlFor="name">{t('settings.profileName')}</Label>
                   <Input
                     id="name"
                     placeholder="My OpenAI Key"
@@ -217,7 +258,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="provider_type">Provider Type</Label>
+                  <Label htmlFor="provider_type">{t('settings.providerType')}</Label>
                   <Select
                     value={formData.provider_type}
                     onValueChange={(v: ProviderType) => setFormData({ ...formData, provider_type: v })}
@@ -235,7 +276,7 @@ export default function Settings() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="api_key">API Key</Label>
+                  <Label htmlFor="api_key">{t('settings.apiKey')}</Label>
                   <Input
                     id="api_key"
                     type="password"
@@ -247,7 +288,7 @@ export default function Settings() {
                 </div>
                 {formData.provider_type === 'custom' && (
                   <div className="space-y-2">
-                    <Label htmlFor="endpoint">Custom Endpoint</Label>
+                    <Label htmlFor="endpoint">{t('settings.customEndpoint')}</Label>
                     <Input
                       id="endpoint"
                       placeholder="https://api.example.com/v1/chat/completions"
@@ -257,7 +298,7 @@ export default function Settings() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="model">Default Model</Label>
+                  <Label htmlFor="model">{t('settings.defaultModel')}</Label>
                   {formData.provider_type === 'custom' ? (
                     <Input
                       id="model"
@@ -271,7 +312,7 @@ export default function Settings() {
                       onValueChange={(v) => setFormData({ ...formData, model: v })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a model" />
+                        <SelectValue placeholder={t('settings.selectModel')} />
                       </SelectTrigger>
                       <SelectContent className="bg-popover z-50">
                         {getModelsForProvider(formData.provider_type).map((model) => (
@@ -284,7 +325,7 @@ export default function Settings() {
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Adding...' : 'Add Provider'}
+                  {createMutation.isPending ? t('common.adding') : t('settings.addProvider')}
                 </Button>
               </form>
             </DialogContent>
@@ -293,12 +334,12 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Configured Providers</CardTitle>
-            <CardDescription>Your API keys are stored securely and used for agent interactions</CardDescription>
+            <CardTitle>{t('settings.configuredProviders')}</CardTitle>
+            <CardDescription>{t('settings.configuredProvidersDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
             ) : providers && providers.length > 0 ? (
               <div className="space-y-3">
                 {providers.map((provider) => (
@@ -309,7 +350,7 @@ export default function Settings() {
                         <div className="font-medium flex items-center gap-2">
                           {provider.name}
                           {provider.is_default && (
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Default</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">{t('common.default')}</span>
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -329,7 +370,7 @@ export default function Settings() {
                         ) : (
                           <Check className="h-4 w-4" />
                         )}
-                        Test
+                        {t('common.test')}
                       </Button>
                       {!provider.is_default && (
                         <Button
@@ -337,7 +378,7 @@ export default function Settings() {
                           size="sm"
                           onClick={() => setDefaultMutation.mutate(provider.id)}
                         >
-                          Set Default
+                          {t('common.setDefault')}
                         </Button>
                       )}
                       <Button
@@ -354,8 +395,8 @@ export default function Settings() {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Key className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No providers configured yet</p>
-                <p className="text-sm">Add your first API provider to get started</p>
+                <p>{t('settings.noProviders')}</p>
+                <p className="text-sm">{t('settings.noProvidersDesc')}</p>
               </div>
             )}
           </CardContent>
