@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Bot, Plus, Trash2 } from 'lucide-react';
+import { ICON_MAP } from '@/components/AgentIconPicker';
 
 interface Agent {
   id: string;
@@ -14,6 +15,7 @@ interface Agent {
   description: string | null;
   icon: string;
   color: string;
+  avatar_url: string | null;
   system_prompt: string;
   is_system: boolean;
   temperature: number;
@@ -49,14 +51,7 @@ export default function Agents() {
     },
   });
 
-  const iconMap: Record<string, string> = {
-    'briefcase': '💼',
-    'scale': '⚖️',
-    'target': '🎯',
-    'brain': '🧠',
-    'chart': '📊',
-    'bot': '🤖',
-  };
+  // Using ICON_MAP from AgentIconPicker
 
   return (
     <AppLayout title={t('agents.title')}>
@@ -83,12 +78,20 @@ export default function Agents() {
                 <Card className="relative group hover:border-primary/50 transition-colors cursor-pointer h-full flex flex-col">
                   <CardHeader className="flex-1">
                     <div className="flex items-start justify-between">
-                      <div 
-                        className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
-                        style={{ backgroundColor: agent.color + '20' }}
-                      >
-                        {iconMap[agent.icon] || '🤖'}
-                      </div>
+                      {agent.avatar_url ? (
+                        <img 
+                          src={agent.avatar_url} 
+                          alt={agent.name} 
+                          className="h-12 w-12 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <div 
+                          className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
+                          style={{ backgroundColor: agent.color + '20' }}
+                        >
+                          {ICON_MAP[agent.icon] || '🤖'}
+                        </div>
+                      )}
                       {!agent.is_system && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button

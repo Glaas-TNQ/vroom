@@ -18,15 +18,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Sparkles, MessageSquare, Thermometer, Coins, Bot } from 'lucide-react';
 import AtlasDesignWorkspace from '@/components/AtlasDesignWorkspace';
+import AgentIconPicker, { ICON_MAP } from '@/components/AgentIconPicker';
 
-const ICONS = [
-  { value: 'briefcase', label: '💼 CFO', emoji: '💼' },
-  { value: 'scale', label: '⚖️ Legal', emoji: '⚖️' },
-  { value: 'target', label: '🎯 Strategy', emoji: '🎯' },
-  { value: 'brain', label: '🧠 Analyst', emoji: '🧠' },
-  { value: 'chart', label: '📊 Data', emoji: '📊' },
-  { value: 'bot', label: '🤖 General', emoji: '🤖' },
-];
+// Icons are now in AgentIconPicker component
 
 const COLORS = [
   { value: '#22c55e', label: 'Green' },
@@ -113,6 +107,7 @@ export default function AgentBuilder() {
     description: '',
     icon: 'bot',
     color: '#6366f1',
+    avatar_url: null as string | null,
     system_prompt: SYSTEM_PROMPT_TEMPLATES['bot'],
     provider_profile_id: '',
     temperature: 0.7,
@@ -163,6 +158,7 @@ export default function AgentBuilder() {
         description: agent.description || '',
         icon: agent.icon,
         color: agent.color,
+        avatar_url: (agent as any).avatar_url || null,
         system_prompt: agent.system_prompt,
         provider_profile_id: agent.provider_profile_id || '',
         temperature: Number(agent.temperature),
@@ -182,6 +178,7 @@ export default function AgentBuilder() {
         description: data.description || null,
         icon: data.icon,
         color: data.color,
+        avatar_url: data.avatar_url,
         system_prompt: data.system_prompt,
         provider_profile_id: data.provider_profile_id || null,
         temperature: data.temperature,
@@ -235,14 +232,7 @@ export default function AgentBuilder() {
     toast({ title: t('common.success'), description: 'Agent design applied!' });
   };
 
-  const iconMap: Record<string, string> = {
-    'briefcase': '💼',
-    'scale': '⚖️',
-    'target': '🎯',
-    'brain': '🧠',
-    'chart': '📊',
-    'bot': '🤖',
-  };
+  // Remove old iconMap - now using ICON_MAP from AgentIconPicker
 
   const getProviderName = () => {
     if (!formData.provider_profile_id) return 'Lovable AI';
@@ -326,18 +316,18 @@ export default function AgentBuilder() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>{t('agents.type')}</Label>
-                      <Select value={formData.icon} onValueChange={handleIconChange}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ICONS.map((icon) => (
-                            <SelectItem key={icon.value} value={icon.value}>
-                              {icon.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-3">
+                        <AgentIconPicker
+                          value={formData.icon}
+                          avatarUrl={formData.avatar_url}
+                          color={formData.color}
+                          onIconChange={(icon) => setFormData({ ...formData, icon })}
+                          onAvatarChange={(url) => setFormData({ ...formData, avatar_url: url })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Click to choose icon or upload image
+                        </p>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label>{t('agents.color')}</Label>
@@ -499,12 +489,20 @@ export default function AgentBuilder() {
               <CardContent className="space-y-4">
                 {/* Agent Avatar Preview */}
                 <div className="flex items-center gap-3">
-                  <div
-                    className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
-                    style={{ backgroundColor: `${formData.color}20` }}
-                  >
-                    {iconMap[formData.icon] || '🤖'}
-                  </div>
+                  {formData.avatar_url ? (
+                    <img 
+                      src={formData.avatar_url} 
+                      alt="Agent avatar" 
+                      className="h-12 w-12 rounded-lg object-cover shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
+                      style={{ backgroundColor: `${formData.color}20` }}
+                    >
+                      {ICON_MAP[formData.icon] || '🤖'}
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <h3 className="font-semibold truncate">
                       {formData.name || 'Agent Name'}
@@ -562,12 +560,20 @@ export default function AgentBuilder() {
                   }}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-base shrink-0"
-                      style={{ backgroundColor: `${formData.color}20` }}
-                    >
-                      {iconMap[formData.icon] || '🤖'}
-                    </div>
+                    {formData.avatar_url ? (
+                      <img 
+                        src={formData.avatar_url} 
+                        alt="Agent avatar" 
+                        className="h-8 w-8 rounded-lg object-cover shrink-0"
+                      />
+                    ) : (
+                      <div
+                        className="h-8 w-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                        style={{ backgroundColor: `${formData.color}20` }}
+                      >
+                        {ICON_MAP[formData.icon] || '🤖'}
+                      </div>
+                    )}
                     <div>
                       <span className="font-semibold text-sm">
                         {formData.name || 'Agent Name'}
