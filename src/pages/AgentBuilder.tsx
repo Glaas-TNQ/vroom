@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -98,10 +98,14 @@ export default function AgentBuilder() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!id;
+  
+  // Check if navigated with an Atlas prompt prefilled from Room Advisor
+  const prefilledAtlasPrompt = (location.state as { atlasPrompt?: string })?.atlasPrompt;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,7 +120,8 @@ export default function AgentBuilder() {
     unlimited_tokens: false,
   });
 
-  const [atlasMode, setAtlasMode] = useState(false);
+  const [atlasMode, setAtlasMode] = useState(!!prefilledAtlasPrompt);
+  const [initialAtlasDescription, setInitialAtlasDescription] = useState(prefilledAtlasPrompt || '');
 
   const { data: agent, isLoading: agentLoading } = useQuery({
     queryKey: ['agent', id],
@@ -269,7 +274,11 @@ export default function AgentBuilder() {
           atlasPrompt={atlasAgent?.system_prompt}
           providers={providers}
           onApply={handleAtlasApply}
-          onCancel={() => setAtlasMode(false)}
+          onCancel={() => {
+            setAtlasMode(false);
+            setInitialAtlasDescription('');
+          }}
+          initialDescription={initialAtlasDescription}
         />
       </AppLayout>
     );

@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ import {
   Copy, 
   Check,
   AlertTriangle,
-  Plus,
   ArrowRight
 } from 'lucide-react';
 import ArchimedeDesignWorkspace from '@/components/ArchimedeDesignWorkspace';
@@ -220,6 +218,10 @@ export default function RoomAdvisor() {
     setTimeout(() => setCopiedPrompt(null), 2000);
   };
 
+  const navigateToAtlasWithPrompt = (prompt: string) => {
+    navigate('/agents/new', { state: { atlasPrompt: prompt } });
+  };
+
   const renderRecommendationCard = (message: Message) => {
     if (!message.recommendation && !message.suggested_agents?.length && !message.missing_agents?.length) {
       return null;
@@ -292,53 +294,53 @@ export default function RoomAdvisor() {
                 Suggested New Agents
               </CardTitle>
               <CardDescription className="text-xs">
-                These agents don't exist yet but would be valuable. Copy the prompt to create them with Atlas.
+                Click "Create with Atlas" to create the agent directly with the prompt prefilled.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {message.missing_agents.map((agent, i) => (
                   <div key={i} className="p-3 rounded-lg bg-background border">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
+                    <div className="flex flex-col gap-2">
+                      <div>
                         <p className="font-medium text-sm">{agent.suggested_name}</p>
                         <p className="text-xs text-muted-foreground mt-1">{agent.expertise}</p>
                         <p className="text-xs text-amber-600 mt-1">{agent.why_needed}</p>
                       </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => copyAtlasPrompt(agent.atlas_prompt, agent.suggested_name)}
-                              className="shrink-0"
-                            >
-                              {copiedPrompt === agent.suggested_name ? (
-                                <Check className="h-3 w-3" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-sm">
-                            <p className="font-medium mb-1">Atlas Prompt:</p>
-                            <p className="text-xs">{agent.atlas_prompt}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigateToAtlasWithPrompt(agent.atlas_prompt)}
+                        >
+                          <Sparkles className="h-3 w-3 mr-2" />
+                          Create with Atlas
+                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => copyAtlasPrompt(agent.atlas_prompt, agent.suggested_name)}
+                              >
+                                {copiedPrompt === agent.suggested_name ? (
+                                  <Check className="h-3 w-3" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="max-w-sm">
+                              <p className="font-medium mb-1">Copy prompt to clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
                   </div>
                 ))}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full mt-2"
-                  onClick={() => navigate('/agents/new')}
-                >
-                  <Plus className="h-3 w-3 mr-2" />
-                  Create Agent with Atlas
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -375,8 +377,8 @@ export default function RoomAdvisor() {
 
   return (
     <AppLayout title={t('roomAdvisor.title')}>
-      <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <Button variant="ghost" onClick={() => navigate('/rooms')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('roomAdvisor.backToRooms')}
@@ -387,82 +389,87 @@ export default function RoomAdvisor() {
           </Button>
         </div>
 
-        <Card className="flex-1 flex flex-col overflow-hidden">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+        <Card className="flex-1 flex flex-col min-h-0">
+          <CardHeader className="pb-3 border-b shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              {t('roomAdvisor.title')} AI
-            </CardTitle>
-            <CardDescription>
-              {t('roomAdvisor.subtitle')} — I'll suggest agents, methodologies, and help you create the perfect room.
-            </CardDescription>
+              <div>
+                <CardTitle>{t('roomAdvisor.title')} AI</CardTitle>
+                <CardDescription className="mt-1">
+                  {t('roomAdvisor.subtitle')}
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
 
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
               {messages.map((message, index) => (
-                <div key={index}>
-                  <div className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-                    {message.role === 'assistant' && (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Bot className="h-4 w-4 text-primary" />
-                      </div>
-                    )}
-                    <div
-                      className={`rounded-lg p-4 max-w-[85%] ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                        <Markdown content={message.content} />
-                      </div>
-                      {message.role === 'assistant' && renderRecommendationCard(message)}
+                <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                  {message.role === 'assistant' && (
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                      <Bot className="h-4 w-4 text-primary" />
                     </div>
-                    {message.role === 'user' && (
-                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <User className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                    )}
+                  )}
+                  <div
+                    className={`rounded-lg p-4 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground max-w-[80%]'
+                        : 'bg-muted flex-1 max-w-[90%]'
+                    }`}
+                  >
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                      <Markdown content={message.content} />
+                    </div>
+                    {message.role === 'assistant' && renderRecommendationCard(message)}
                   </div>
+                  {message.role === 'user' && (
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
                 </div>
               ))}
               {isLoading && (
                 <div className="flex gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
                   <div className="bg-muted rounded-lg p-4">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" />
-                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    <div className="flex gap-1.5">
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.3s]" />
                     </div>
                   </div>
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
-          <CardContent className="border-t p-4">
-            <div className="flex gap-2">
+          <div className="border-t p-4 shrink-0">
+            <div className="flex gap-3 max-w-3xl mx-auto">
               <Textarea
                 placeholder={t('roomAdvisor.placeholder')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="resize-none"
+                className="resize-none flex-1"
                 disabled={isLoading}
               />
-              <Button onClick={sendMessage} disabled={!input.trim() || isLoading} className="shrink-0">
-                <Send className="h-4 w-4" />
+              <Button 
+                onClick={sendMessage} 
+                disabled={!input.trim() || isLoading} 
+                className="shrink-0 h-auto"
+                size="lg"
+              >
+                <Send className="h-5 w-5" />
               </Button>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </AppLayout>
