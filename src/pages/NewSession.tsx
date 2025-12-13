@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users, Zap } from 'lucide-react';
 
 interface Agent {
   id: string;
@@ -21,6 +22,19 @@ interface Agent {
   description: string | null;
   icon: string;
   color: string;
+  provider_profile_id: string | null;
+}
+
+interface ProviderProfile {
+  id: string;
+  name: string;
+  provider_type: string;
+  model: string | null;
+}
+
+interface AgentProviderOverride {
+  agentId: string;
+  providerProfileId: string | null;
 }
 
 interface Room {
@@ -57,6 +71,9 @@ export default function NewSession() {
     selectedAgentIds: [] as string[],
     maxRounds: 5,
   });
+
+  const [agentProviderOverrides, setAgentProviderOverrides] = useState<AgentProviderOverride[]>([]);
+  const [globalProviderId, setGlobalProviderId] = useState<string | null>(null);
 
   const getMethodologyLabel = (methodology: string) => {
     return t(`methodologies.${methodology}.label`, { defaultValue: methodology });
@@ -108,6 +125,65 @@ export default function NewSession() {
     },
   });
 
+  const { data: providerProfiles } = useQuery({
+    queryKey: ['provider-profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('provider_profiles')
+        .select('id, name, provider_type, model')
+        .order('name');
+      if (error) throw error;
+      return data as ProviderProfile[];
+    },
+  });
+
+  const getAgentProvider = (agentId: string): string | null => {
+    const override = agentProviderOverrides.find(o => o.agentId === agentId);
+    if (override) return override.providerProfileId;
+    const agent = agents?.find(a => a.id === agentId);
+    return agent?.provider_profile_id || null;
+  };
+
+  const setAgentProvider = (agentId: string, providerProfileId: string | null) => {
+    setAgentProviderOverrides(prev => {
+      const existing = prev.find(o => o.agentId === agentId);
+      if (existing) {
+        return prev.map(o => o.agentId === agentId ? { ...o, providerProfileId } : o);
+      }
+      return [...prev, { agentId, providerProfileId }];
+    });
+  };
+
+  const applyGlobalProvider = () => {
+    if (!globalProviderId) return;
+    const newOverrides = formData.selectedAgentIds.map(agentId => ({
+      agentId,
+      providerProfileId: globalProviderId,
+    }));
+    setAgentProviderOverrides(newOverrides);
+  };
+
+  const getProviderDisplayName = (providerId: string | null): string => {
+    if (!providerId) return 'Lovable AI';
+    const provider = providerProfiles?.find(p => p.id === providerId);
+    if (!provider) return 'Lovable AI';
+    return `${provider.name}${provider.model ? ` (${provider.model})` : ''}`;
+  };
+
+  const getProviderBadgeColor = (providerId: string | null): string => {
+    if (!providerId) return 'bg-primary/10 text-primary';
+    const provider = providerProfiles?.find(p => p.id === providerId);
+    if (!provider) return 'bg-muted text-muted-foreground';
+    const colors: Record<string, string> = {
+      openai: 'bg-emerald-500/10 text-emerald-600',
+      anthropic: 'bg-orange-500/10 text-orange-600',
+      perplexity: 'bg-blue-500/10 text-blue-600',
+      tavily: 'bg-purple-500/10 text-purple-600',
+      custom: 'bg-muted text-muted-foreground',
+    };
+    return colors[provider.provider_type] || 'bg-muted text-muted-foreground';
+  };
+
   useEffect(() => {
     if (preselectedRoomId && rooms) {
       const room = rooms.find(r => r.id === preselectedRoomId);
@@ -140,12 +216,22 @@ export default function NewSession() {
     mutationFn: async () => {
       const agentConfig = agents
         ?.filter(a => formData.selectedAgentIds.includes(a.id))
-        .map(a => ({
-          id: a.id,
-          name: a.name,
-          icon: a.icon,
-          color: a.color,
-        })) || [];
+        .map(a => {
+          const overrideProviderId = getAgentProvider(a.id);
+          const provider = overrideProviderId 
+            ? providerProfiles?.find(p => p.id === overrideProviderId)
+            : null;
+          return {
+            id: a.id,
+            name: a.name,
+            icon: a.icon,
+            color: a.color,
+            provider_profile_id: overrideProviderId,
+            provider_name: provider?.name || null,
+            provider_type: provider?.provider_type || null,
+            provider_model: provider?.model || null,
+          };
+        }) || [];
 
       const { data, error } = await supabase
         .from('sessions')
@@ -394,36 +480,105 @@ export default function NewSession() {
                 {selectedRoom && selectedRoom.agent_ids.length > 0 && ` (${t('newSession.preSelectedFromRoom')})`}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Global Provider Selection */}
+              {providerProfiles && providerProfiles.length > 0 && (
+                <div className="p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <Label className="font-medium">{t('newSession.globalProvider')}</Label>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select
+                      value={globalProviderId || 'lovable-ai'}
+                      onValueChange={(v) => setGlobalProviderId(v === 'lovable-ai' ? null : v)}
+                    >
+                      <SelectTrigger className="flex-1 bg-background">
+                        <SelectValue placeholder={t('newSession.selectProvider')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lovable-ai">Lovable AI (default)</SelectItem>
+                        {providerProfiles.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name} {p.model && `(${p.model})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="secondary" 
+                      onClick={applyGlobalProvider}
+                      disabled={formData.selectedAgentIds.length === 0}
+                    >
+                      {t('newSession.applyToAll')}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('newSession.globalProviderDesc')}
+                  </p>
+                </div>
+              )}
+
               {agents && agents.length > 0 ? (
                 <div className="grid gap-3">
-                  {agents.map((agent) => (
-                    <label
-                      key={agent.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        formData.selectedAgentIds.includes(agent.id)
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-accent'
-                      }`}
-                    >
-                      <Checkbox
-                        checked={formData.selectedAgentIds.includes(agent.id)}
-                        onCheckedChange={() => toggleAgent(agent.id)}
-                      />
+                  {agents.map((agent) => {
+                    const isSelected = formData.selectedAgentIds.includes(agent.id);
+                    const currentProviderId = getAgentProvider(agent.id);
+                    
+                    return (
                       <div
-                        className="h-10 w-10 rounded-lg flex items-center justify-center text-xl"
-                        style={{ backgroundColor: agent.color + '20' }}
+                        key={agent.id}
+                        className={`rounded-lg border transition-colors ${
+                          isSelected ? 'border-primary bg-primary/5' : 'hover:bg-accent'
+                        }`}
                       >
-                        {iconMap[agent.icon] || '🤖'}
+                        <label className="flex items-center gap-3 p-3 cursor-pointer">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleAgent(agent.id)}
+                          />
+                          <div
+                            className="h-10 w-10 rounded-lg flex items-center justify-center text-xl shrink-0"
+                            style={{ backgroundColor: agent.color + '20' }}
+                          >
+                            {iconMap[agent.icon] || '🤖'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium">{agent.name}</span>
+                              <Badge variant="secondary" className={`text-xs ${getProviderBadgeColor(currentProviderId)}`}>
+                                {getProviderDisplayName(currentProviderId)}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {agent.description || t('agents.noAgents')}
+                            </div>
+                          </div>
+                        </label>
+                        
+                        {isSelected && providerProfiles && providerProfiles.length > 0 && (
+                          <div className="px-3 pb-3 pt-0 ml-14">
+                            <Select
+                              value={currentProviderId || 'lovable-ai'}
+                              onValueChange={(v) => setAgentProvider(agent.id, v === 'lovable-ai' ? null : v)}
+                            >
+                              <SelectTrigger className="h-8 text-xs bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="lovable-ai">Lovable AI (default)</SelectItem>
+                                {providerProfiles.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} {p.model && `(${p.model})`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{agent.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {agent.description || t('agents.noAgents')}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
