@@ -372,13 +372,13 @@ export default function OneOnOne() {
 
           {/* Provider override selector */}
           <div className="min-w-[180px]">
-            <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+            <Select value={selectedProviderId || "__default__"} onValueChange={(v) => setSelectedProviderId(v === "__default__" ? "" : v)}>
               <SelectTrigger>
                 <Settings2 className="h-4 w-4 mr-2" />
                 <SelectValue placeholder={t('oneOnOne.defaultProvider')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
+                <SelectItem value="__default__">
                   {t('oneOnOne.defaultProvider')}
                 </SelectItem>
                 {providers?.map((provider) => (

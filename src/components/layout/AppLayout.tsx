@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Zap } from 'lucide-react';
+import { LogOut, Zap, Moon, Sun } from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,6 +13,11 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title }: AppLayoutProps) {
   const { signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <SidebarProvider>
@@ -32,10 +38,19 @@ export function AppLayout({ children, title }: AppLayoutProps) {
                 </>
               )}
             </div>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             {children}
