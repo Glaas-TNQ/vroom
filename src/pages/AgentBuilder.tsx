@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,6 +115,7 @@ export default function AgentBuilder() {
     provider_profile_id: '',
     temperature: 0.7,
     max_tokens: 2048,
+    unlimited_tokens: false,
   });
 
   const [atlasOpen, setAtlasOpen] = useState(false);
@@ -166,6 +168,7 @@ export default function AgentBuilder() {
         provider_profile_id: agent.provider_profile_id || '',
         temperature: Number(agent.temperature),
         max_tokens: agent.max_tokens,
+        unlimited_tokens: (agent as any).unlimited_tokens || false,
       });
     }
   }, [agent]);
@@ -188,6 +191,7 @@ export default function AgentBuilder() {
         provider_profile_id: data.provider_profile_id || null,
         temperature: data.temperature,
         max_tokens: data.max_tokens,
+        unlimited_tokens: data.unlimited_tokens,
       };
 
       if (isEditing) {
@@ -487,7 +491,7 @@ export default function AgentBuilder() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-3">
                   <Label>{t('agents.temperature')}: {formData.temperature}</Label>
                   <Slider
@@ -508,7 +512,20 @@ export default function AgentBuilder() {
                     onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
                     min={256}
                     max={8192}
+                    disabled={formData.unlimited_tokens}
                   />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <Switch
+                  id="unlimited_tokens"
+                  checked={formData.unlimited_tokens}
+                  onCheckedChange={(checked) => setFormData({ ...formData, unlimited_tokens: checked })}
+                />
+                <div>
+                  <Label htmlFor="unlimited_tokens">{t('agents.unlimitedTokens')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('agents.unlimitedTokensHint')}</p>
                 </div>
               </div>
 
@@ -536,6 +553,7 @@ export default function AgentBuilder() {
                         provider_profile_id: formData.provider_profile_id || null,
                         temperature: formData.temperature,
                         max_tokens: formData.max_tokens,
+                        unlimited_tokens: formData.unlimited_tokens,
                       });
                       if (error) {
                         toast({ title: t('common.error'), description: error.message, variant: 'destructive' });

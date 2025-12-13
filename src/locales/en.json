@@ -30,6 +30,7 @@
     "dashboard": "Dashboard",
     "agents": "Agents",
     "rooms": "Rooms",
+    "oneOnOne": "1 on 1",
     "sessions": "Sessions",
     "settings": "Settings",
     "newSession": "New Session"
@@ -102,7 +103,20 @@
     "designing": "Atlas is designing your agent...",
     "design": "Design Agent",
     "applyDesign": "Apply This Design",
-    "atlasPlaceholder": "Example: I need an agent that can analyze legal contracts and identify potential risks, compliance issues, and unfavorable clauses. It should be thorough but also practical in suggesting alternatives."
+    "atlasPlaceholder": "Example: I need an agent that can analyze legal contracts and identify potential risks, compliance issues, and unfavorable clauses. It should be thorough but also practical in suggesting alternatives.",
+    "unlimitedTokens": "Unlimited Tokens",
+    "unlimitedTokensHint": "Remove token limit - agent can use as many tokens as needed"
+  },
+  "oneOnOne": {
+    "title": "1 on 1 Chat",
+    "selectAgent": "Select an agent",
+    "selectAgentPrompt": "Select an agent to start chatting",
+    "selectAgentFirst": "Select an agent first",
+    "startChat": "Start a conversation with this agent",
+    "placeholder": "Type your message...",
+    "thinking": "Thinking...",
+    "newSession": "New Session",
+    "error": "An error occurred. Please try again."
   },
   "rooms": {
     "title": "Rooms",

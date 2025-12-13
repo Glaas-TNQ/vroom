@@ -16,6 +16,7 @@ import NewSession from "./pages/NewSession";
 import Rooms from "./pages/Rooms";
 import RoomBuilder from "./pages/RoomBuilder";
 import RoomAdvisor from "./pages/RoomAdvisor";
+import OneOnOne from "./pages/OneOnOne";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/rooms/new" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
             <Route path="/rooms/advisor" element={<ProtectedRoute><RoomAdvisor /></ProtectedRoute>} />
             <Route path="/rooms/:id" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
+            <Route path="/one-on-one" element={<ProtectedRoute><OneOnOne /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
             <Route path="/sessions/new" element={<ProtectedRoute><NewSession /></ProtectedRoute>} />

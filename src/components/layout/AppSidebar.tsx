@@ -1,4 +1,4 @@
-import { Home, Bot, Play, Settings, History, LayoutGrid } from 'lucide-react';
+import { Home, Bot, Play, Settings, History, LayoutGrid, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from '@/components/NavLink';
 import {
@@ -19,6 +19,7 @@ export function AppSidebar() {
     { title: t('nav.dashboard'), url: '/', icon: Home },
     { title: t('nav.agents'), url: '/agents', icon: Bot },
     { title: t('nav.rooms'), url: '/rooms', icon: LayoutGrid },
+    { title: t('nav.oneOnOne'), url: '/one-on-one', icon: MessageCircle },
     { title: t('nav.sessions'), url: '/sessions', icon: History },
     { title: t('nav.settings'), url: '/settings', icon: Settings },
   ];
