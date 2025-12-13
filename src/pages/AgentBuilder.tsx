@@ -172,26 +172,38 @@ export default function AgentBuilder() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const payload = {
-        user_id: user!.id,
-        name: data.name,
-        description: data.description || null,
-        icon: data.icon,
-        color: data.color,
-        avatar_url: data.avatar_url,
-        system_prompt: data.system_prompt,
-        provider_profile_id: data.provider_profile_id || null,
-        temperature: data.temperature,
-        max_tokens: data.max_tokens,
-        unlimited_tokens: data.unlimited_tokens,
-      };
-
-      if (isEditing) {
-        const { error } = await supabase.from('agents').update(payload).eq('id', id);
+      if (isEditing && isSystemAgent) {
+        // For system agents, only update appearance and provider
+        const systemPayload = {
+          icon: data.icon,
+          color: data.color,
+          avatar_url: data.avatar_url,
+          provider_profile_id: data.provider_profile_id || null,
+        };
+        const { error } = await supabase.from('agents').update(systemPayload).eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('agents').insert(payload);
-        if (error) throw error;
+        const payload = {
+          user_id: user!.id,
+          name: data.name,
+          description: data.description || null,
+          icon: data.icon,
+          color: data.color,
+          avatar_url: data.avatar_url,
+          system_prompt: data.system_prompt,
+          provider_profile_id: data.provider_profile_id || null,
+          temperature: data.temperature,
+          max_tokens: data.max_tokens,
+          unlimited_tokens: data.unlimited_tokens,
+        };
+
+        if (isEditing) {
+          const { error } = await supabase.from('agents').update(payload).eq('id', id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('agents').insert(payload);
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -440,9 +452,9 @@ export default function AgentBuilder() {
                         disabled={saveMutation.isPending}
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        {saveMutation.isPending ? t('common.loading') : t('agents.saveProvider')}
+                        {saveMutation.isPending ? t('common.loading') : t('agents.saveChanges')}
                       </Button>
-                      <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentProviderHint')}</p>
+                      <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentAppearanceHint')}</p>
                       <Button 
                         type="button" 
                         variant="outline" 
