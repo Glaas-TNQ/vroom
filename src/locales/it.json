@@ -80,8 +80,8 @@
     "type": "Tipo Agente",
     "color": "Colore",
     "apiProvider": "Provider API",
-    "apiProviderDefault": "Usa Lovable AI (default)",
-    "apiProviderHint": "Lascia vuoto per usare Lovable AI, o seleziona il tuo provider",
+    "apiProviderDefault": "Usa Provider Predefinito",
+    "apiProviderHint": "Lascia vuoto per usare il provider predefinito, o seleziona il tuo provider",
     "systemPrompt": "System Prompt",
     "temperature": "Temperature",
     "temperatureHint": "Più basso = più concentrato, Più alto = più creativo",
@@ -128,7 +128,7 @@
     "sessionDeleted": "Chat eliminata",
     "error": "Si è verificato un errore. Riprova.",
     "selectProvider": "Provider",
-    "defaultProvider": "Default (Lovable AI)",
+    "defaultProvider": "Default",
     "providerOverride": "Override provider per questa chat"
   },
   "rooms": {
@@ -340,6 +340,48 @@
     "partnershipEvaluation": {
       "name": "Valutazione Partnership Strategica",
       "description": "Valuta potenziali partnership attraverso brainstorming creativo. Analizza termini, sinergie e fit strategico con ideazione collaborativa."
+    },
+    "Analisi Strategica McKinsey": {
+      "name": "Analisi Strategica McKinsey",
+      "description": "Approccio analitico-strutturato con scomposizione MECE del problema e sintesi gerarchica (Pyramid Principle)"
+    },
+    "Pianificazione OKR/BSC": {
+      "name": "Pianificazione OKR/BSC",
+      "description": "Approccio strategico-esecutivo con Balanced Scorecard per allineare attività a obiettivi di lungo termine"
+    },
+    "Brainstorming Creativo": {
+      "name": "Brainstorming Creativo",
+      "description": "Approccio Design Thinking con ruoli di pensiero diversi (creativo, critico, ottimista) per generare idee innovative"
+    },
+    "Validazione Lean Startup": {
+      "name": "Validazione Lean Startup",
+      "description": "Ciclo Build-Measure-Learn per testare rapidamente ipotesi e adattarsi in cicli brevi"
+    },
+    "Analisi Multi-Prospettiva": {
+      "name": "Analisi Multi-Prospettiva",
+      "description": "Approccio ensemble con analisi parallele indipendenti da specialisti diversi, poi sintesi finale"
+    }
+  },
+  "systemAgents": {
+    "Socrates": {
+      "name": "Socrates",
+      "description": "Specialista di ragionamento First Principles che usa la metodologia socratica per decostruire problemi complessi fino alle verità fondamentali e ricostruire soluzioni innovative dal basso"
+    },
+    "Alex": {
+      "name": "Alex",
+      "description": "Specialista di design thinking incentrato sull'utente, workshop di innovazione, customer journey mapping e facilitazione di sessioni creative per la risoluzione di problemi"
+    },
+    "James": {
+      "name": "James",
+      "description": "Specialista nella creazione di comunicazioni executive-level convincenti, presentazioni e messaggi strategici per C-suite con eccellenza cross-culturale"
+    },
+    "Oliver": {
+      "name": "Oliver",
+      "description": "Specialista in strategia aziendale, analisi di mercato e sviluppo di roadmap strategiche per modelli di business software e technology-driven"
+    },
+    "Lucas": {
+      "name": "Lucas",
+      "description": "Leader Customer Success specializzato in gestione del ciclo di vita del cliente, ottimizzazione retention, expansion revenue e relazioni di lungo termine per organizzazioni tecnologiche globali"
     }
   }
 }

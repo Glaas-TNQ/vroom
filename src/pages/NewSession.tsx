@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useAgents, Agent } from '@/hooks/useAgents';
+import { Agent } from '@/hooks/useAgents';
+import { useTranslatedAgents, useSystemTranslation } from '@/hooks/useSystemTranslation';
 import { RoomAdvisorDialog } from '@/components/RoomAdvisorDialog';
 import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users, Zap } from 'lucide-react';
 
@@ -97,6 +98,8 @@ export default function NewSession() {
     return colors[methodology] || 'bg-muted text-muted-foreground';
   };
 
+  const { translateSystemRoom } = useSystemTranslation();
+
   const { data: rooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
@@ -106,11 +109,12 @@ export default function NewSession() {
         .order('is_system', { ascending: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Room[];
+      const roomsData = data as Room[];
+      return roomsData.map(translateSystemRoom);
     },
   });
 
-  const { data: agents } = useAgents();
+  const { data: agents } = useTranslatedAgents();
 
   const { data: providerProfiles } = useQuery({
     queryKey: ['provider-profiles'],
@@ -151,9 +155,9 @@ export default function NewSession() {
   };
 
   const getProviderDisplayName = (providerId: string | null): string => {
-    if (!providerId) return 'Lovable AI';
+    if (!providerId) return 'Default';
     const provider = providerProfiles?.find(p => p.id === providerId);
-    if (!provider) return 'Lovable AI';
+    if (!provider) return 'Default';
     return `${provider.name}${provider.model ? ` (${provider.model})` : ''}`;
   };
 
@@ -484,14 +488,14 @@ export default function NewSession() {
                   </div>
                   <div className="flex gap-2">
                     <Select
-                      value={globalProviderId || 'lovable-ai'}
-                      onValueChange={(v) => setGlobalProviderId(v === 'lovable-ai' ? null : v)}
+                      value={globalProviderId || '__default__'}
+                      onValueChange={(v) => setGlobalProviderId(v === '__default__' ? null : v)}
                     >
                       <SelectTrigger className="flex-1 bg-background">
                         <SelectValue placeholder={t('newSession.selectProvider')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="lovable-ai">Lovable AI (default)</SelectItem>
+                        <SelectItem value="__default__">Default</SelectItem>
                         {providerProfiles.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} {p.model && `(${p.model})`}
@@ -553,14 +557,14 @@ export default function NewSession() {
                         {isSelected && providerProfiles && providerProfiles.length > 0 && (
                           <div className="px-3 pb-3 pt-0 ml-14">
                             <Select
-                              value={currentProviderId || 'lovable-ai'}
-                              onValueChange={(v) => setAgentProvider(agent.id, v === 'lovable-ai' ? null : v)}
+                              value={currentProviderId || '__default__'}
+                              onValueChange={(v) => setAgentProvider(agent.id, v === '__default__' ? null : v)}
                             >
                               <SelectTrigger className="h-8 text-xs bg-background">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="lovable-ai">Lovable AI (default)</SelectItem>
+                                <SelectItem value="__default__">Default</SelectItem>
                                 {providerProfiles.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
                                     {p.name} {p.model && `(${p.model})`}

@@ -13,7 +13,8 @@ import { Markdown } from '@/components/ui/markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useAgents, Agent } from '@/hooks/useAgents';
+import { Agent } from '@/hooks/useAgents';
+import { useTranslatedAgents } from '@/hooks/useSystemTranslation';
 import { Send, Loader2, Bot, User, Plus, History, Trash2, Settings2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -67,7 +68,7 @@ export default function OneOnOne() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch agents with proper personalization handling
-  const { data: agents } = useAgents();
+  const { data: agents } = useTranslatedAgents();
 
   // Fetch provider profiles
   const { data: providers } = useQuery({

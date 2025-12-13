@@ -286,7 +286,7 @@ export default function AgentBuilder() {
   // Remove old iconMap - now using ICON_MAP from AgentIconPicker
 
   const getProviderName = () => {
-    if (!formData.provider_profile_id) return 'Lovable AI';
+    if (!formData.provider_profile_id) return 'Default';
     const provider = providers?.find(p => p.id === formData.provider_profile_id);
     return provider?.name || 'Custom';
   };

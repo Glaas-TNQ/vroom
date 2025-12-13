@@ -80,8 +80,8 @@
     "type": "Agent Type",
     "color": "Color",
     "apiProvider": "API Provider",
-    "apiProviderDefault": "Use Lovable AI (default)",
-    "apiProviderHint": "Leave empty to use Lovable AI, or select your own provider",
+    "apiProviderDefault": "Use Default Provider",
+    "apiProviderHint": "Leave empty to use default provider, or select your own provider",
     "systemPrompt": "System Prompt",
     "temperature": "Temperature",
     "temperatureHint": "Lower = more focused, Higher = more creative",
@@ -128,7 +128,7 @@
     "sessionDeleted": "Chat deleted",
     "error": "An error occurred. Please try again.",
     "selectProvider": "Provider",
-    "defaultProvider": "Default (Lovable AI)",
+    "defaultProvider": "Default",
     "providerOverride": "Override provider for this chat"
   },
   "rooms": {
@@ -340,6 +340,48 @@
     "partnershipEvaluation": {
       "name": "Strategic Partnership Evaluation",
       "description": "Evaluates potential partnerships through creative brainstorming. Analyzes terms, synergies, and strategic fit with collaborative ideation."
+    },
+    "Analisi Strategica McKinsey": {
+      "name": "McKinsey Strategic Analysis",
+      "description": "Analytical-structured approach with MECE problem decomposition and hierarchical synthesis (Pyramid Principle)"
+    },
+    "Pianificazione OKR/BSC": {
+      "name": "OKR/BSC Planning",
+      "description": "Strategic-executive approach with Balanced Scorecard to align activities with long-term objectives"
+    },
+    "Brainstorming Creativo": {
+      "name": "Creative Brainstorming",
+      "description": "Design Thinking approach with diverse thinking roles (creative, critical, optimistic) to generate innovative ideas"
+    },
+    "Validazione Lean Startup": {
+      "name": "Lean Startup Validation",
+      "description": "Build-Measure-Learn cycle to rapidly test hypotheses and adapt in short cycles"
+    },
+    "Analisi Multi-Prospettiva": {
+      "name": "Multi-Perspective Analysis",
+      "description": "Ensemble approach with independent parallel analyses from different specialists, then final synthesis"
+    }
+  },
+  "systemAgents": {
+    "Socrates": {
+      "name": "Socrates",
+      "description": "Elite First Principles reasoning specialist using Socratic methodology to deconstruct complex problems to fundamental truths and rebuild breakthrough solutions from the ground up"
+    },
+    "Alex": {
+      "name": "Alex",
+      "description": "Elite specialist in human-centered design, innovation workshops, customer journey mapping, and facilitating breakthrough creative problem-solving sessions"
+    },
+    "James": {
+      "name": "James",
+      "description": "Elite specialist in crafting compelling executive-level communications, presentations, and strategic messaging for C-suite audiences with cross-cultural excellence"
+    },
+    "Oliver": {
+      "name": "Oliver",
+      "description": "Elite specialist in high-level business strategy, market analysis, and strategic roadmap development for software and technology-driven business models"
+    },
+    "Lucas": {
+      "name": "Lucas",
+      "description": "Elite Customer Success leader specializing in customer lifecycle management, retention optimization, expansion revenue, and long-term customer relationships for global technology organizations"
     }
   }
 }

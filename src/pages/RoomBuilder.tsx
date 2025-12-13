@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useAgents } from '@/hooks/useAgents';
+import { useTranslatedAgents } from '@/hooks/useSystemTranslation';
 import { ArrowLeft, Save, Info, Sparkles } from 'lucide-react';
 import ArchimedeDesignWorkspace from '@/components/ArchimedeDesignWorkspace';
 
@@ -103,7 +103,7 @@ export default function RoomBuilder() {
     },
   });
 
-  const { data: agents } = useAgents();
+  const { data: agents } = useTranslatedAgents();
 
   const { data: providerProfiles } = useQuery({
     queryKey: ['provider-profiles'],

@@ -8,14 +8,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Bot, Plus, Trash2 } from 'lucide-react';
 import { ICON_MAP } from '@/components/AgentIconPicker';
-import { useAgents, Agent } from '@/hooks/useAgents';
+import { Agent } from '@/hooks/useAgents';
+import { useTranslatedAgents } from '@/hooks/useSystemTranslation';
 
 export default function Agents() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: agents, isLoading } = useAgents();
+  const { data: agents, isLoading } = useTranslatedAgents();
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {

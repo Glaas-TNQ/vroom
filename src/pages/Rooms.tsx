@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSystemTranslation } from '@/hooks/useSystemTranslation';
 import { Play, Trash2, Settings, Users, RotateCcw, Sparkles } from 'lucide-react';
 
 interface Room {
@@ -21,14 +22,6 @@ interface Room {
   available_tools: any[];
 }
 
-// Map system room names to localization keys
-const SYSTEM_ROOM_KEYS: Record<string, string> = {
-  'Market Expansion Analysis': 'marketExpansion',
-  'Product Roadmap Prioritization': 'productRoadmap',
-  'Investment Decision Review': 'investmentDecision',
-  'Strategic Partnership Evaluation': 'partnershipEvaluation',
-};
-
 const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
   sequential_pipeline: <span>→</span>,
   cyclic: <RotateCcw className="h-3 w-3" />,
@@ -40,6 +33,7 @@ export default function Rooms() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { translateSystemRoom } = useSystemTranslation();
 
   const getMethodologyLabel = (methodology: string) => {
     return t(`methodologies.${methodology}.label`, { defaultValue: methodology });
@@ -61,20 +55,6 @@ export default function Rooms() {
     return t(`workflows.${workflow}.label`, { defaultValue: workflow });
   };
 
-  const getRoomDisplayName = (room: Room): string => {
-    if (room.is_system && SYSTEM_ROOM_KEYS[room.name]) {
-      return t(`systemRooms.${SYSTEM_ROOM_KEYS[room.name]}.name`, { defaultValue: room.name });
-    }
-    return room.name;
-  };
-
-  const getRoomDisplayDescription = (room: Room): string | null => {
-    if (room.is_system && SYSTEM_ROOM_KEYS[room.name]) {
-      return t(`systemRooms.${SYSTEM_ROOM_KEYS[room.name]}.description`, { defaultValue: room.description || '' });
-    }
-    return room.description;
-  };
-
   const { data: rooms, isLoading } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
@@ -84,7 +64,8 @@ export default function Rooms() {
         .order('is_system', { ascending: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Room[];
+      const roomsData = data as Room[];
+      return roomsData.map(translateSystemRoom);
     },
   });
 
@@ -128,11 +109,11 @@ export default function Rooms() {
                 <Card key={room.id} className="hover:border-primary/50 transition-colors h-full flex flex-col">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
-                      <span className="truncate">{getRoomDisplayName(room)}</span>
+                      <span className="truncate">{room.name}</span>
                       <Badge variant="secondary" className="text-xs shrink-0">{t('rooms.system')}</Badge>
                     </CardTitle>
                     <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-                      {getRoomDisplayDescription(room)}
+                      {room.description}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 mt-auto">

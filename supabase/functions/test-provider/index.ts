@@ -62,7 +62,7 @@ serve(async (req) => {
       testBody = {
         model: model || "gpt-4o-mini",
         messages: [{ role: "user", content: "Say 'OK'" }],
-        max_tokens: 5,
+        max_completion_tokens: 5,
       };
     } else if (provider_type === "anthropic") {
       testUrl = "https://api.anthropic.com/v1/messages";

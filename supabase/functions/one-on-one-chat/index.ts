@@ -203,7 +203,7 @@ async function callProviderAPI(
         messages,
         temperature,
       };
-      if (maxTokens) body.max_tokens = maxTokens;
+      if (maxTokens) body.max_completion_tokens = maxTokens;
       break;
 
     case 'anthropic':

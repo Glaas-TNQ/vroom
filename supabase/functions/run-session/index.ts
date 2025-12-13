@@ -79,7 +79,7 @@ async function callOpenAI(messages: any[], agent: Agent, provider: ProviderProfi
       model,
       messages,
       temperature: agent.temperature,
-      max_tokens: agent.max_tokens || 1024,
+      max_completion_tokens: agent.max_tokens || 1024,
     }),
   });
 
