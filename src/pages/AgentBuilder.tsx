@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,7 @@ interface ProviderProfile {
 }
 
 export default function AgentBuilder() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -136,7 +138,7 @@ export default function AgentBuilder() {
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (isSystemAgent) {
-        throw new Error('System agents cannot be modified');
+        throw new Error(t('agents.systemAgentReadOnly'));
       }
       
       const payload = {
@@ -161,11 +163,11 @@ export default function AgentBuilder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
-      toast({ title: isEditing ? 'Agent updated' : 'Agent created' });
+      toast({ title: t('common.success') });
       navigate('/agents');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to save agent', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     },
   });
 
@@ -184,32 +186,30 @@ export default function AgentBuilder() {
 
   if (agentLoading) {
     return (
-      <AppLayout title="Agent Builder">
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+      <AppLayout title={t('agents.builder')}>
+        <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout title={isEditing ? 'Edit Agent' : 'Create Agent'}>
+    <AppLayout title={isEditing ? t('agents.edit') : t('agents.create')}>
       <div className="max-w-2xl">
         <Button variant="ghost" onClick={() => navigate('/agents')} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Agents
+          {t('agents.backToAgents')}
         </Button>
 
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Agent' : 'Create New Agent'}</CardTitle>
-            <CardDescription>
-              Configure your AI agent's personality and capabilities
-            </CardDescription>
+            <CardTitle>{isEditing ? t('agents.edit') : t('agents.create')}</CardTitle>
+            <CardDescription>{t('agents.configure')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Agent Name</Label>
+                  <Label htmlFor="name">{t('agents.name')}</Label>
                   <Input
                     id="name"
                     placeholder="CFO Advisor"
@@ -219,7 +219,7 @@ export default function AgentBuilder() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('agents.description')}</Label>
                   <Input
                     id="description"
                     placeholder="Financial analysis expert"
@@ -231,7 +231,7 @@ export default function AgentBuilder() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Agent Type</Label>
+                  <Label>{t('agents.type')}</Label>
                   <Select value={formData.icon} onValueChange={handleIconChange}>
                     <SelectTrigger>
                       <SelectValue />
@@ -246,7 +246,7 @@ export default function AgentBuilder() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Color</Label>
+                  <Label>{t('agents.color')}</Label>
                   <div className="flex gap-2">
                     {COLORS.map((color) => (
                       <button
@@ -265,16 +265,16 @@ export default function AgentBuilder() {
               </div>
 
               <div className="space-y-2">
-                <Label>API Provider</Label>
+                <Label>{t('agents.apiProvider')}</Label>
                 <Select
                   value={formData.provider_profile_id || '__default__'}
                   onValueChange={(v) => setFormData({ ...formData, provider_profile_id: v === '__default__' ? '' : v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Use Lovable AI (default)" />
+                    <SelectValue placeholder={t('agents.apiProviderDefault')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__default__">Use Lovable AI (default)</SelectItem>
+                    <SelectItem value="__default__">{t('agents.apiProviderDefault')}</SelectItem>
                     {providers?.map((provider) => (
                       <SelectItem key={provider.id} value={provider.id}>
                         {provider.name} ({provider.provider_type})
@@ -282,13 +282,11 @@ export default function AgentBuilder() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Leave empty to use Lovable AI, or select your own provider
-                </p>
+                <p className="text-xs text-muted-foreground">{t('agents.apiProviderHint')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="system_prompt">System Prompt</Label>
+                <Label htmlFor="system_prompt">{t('agents.systemPrompt')}</Label>
                 <Textarea
                   id="system_prompt"
                   placeholder="You are a helpful AI assistant..."
@@ -301,7 +299,7 @@ export default function AgentBuilder() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-3">
-                  <Label>Temperature: {formData.temperature}</Label>
+                  <Label>{t('agents.temperature')}: {formData.temperature}</Label>
                   <Slider
                     value={[formData.temperature]}
                     onValueChange={([v]) => setFormData({ ...formData, temperature: v })}
@@ -309,12 +307,10 @@ export default function AgentBuilder() {
                     max={1}
                     step={0.1}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Lower = more focused, Higher = more creative
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('agents.temperatureHint')}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="max_tokens">Max Tokens</Label>
+                  <Label htmlFor="max_tokens">{t('agents.maxTokens')}</Label>
                   <Input
                     id="max_tokens"
                     type="number"
@@ -329,14 +325,12 @@ export default function AgentBuilder() {
               {!isSystemAgent && (
                 <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4 mr-2" />
-                  {saveMutation.isPending ? 'Saving...' : isEditing ? 'Update Agent' : 'Create Agent'}
+                  {saveMutation.isPending ? t('common.loading') : t('common.save')}
                 </Button>
               )}
               {isSystemAgent && (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground text-center">
-                    System agents are read-only and cannot be modified
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentReadOnly')}</p>
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -354,14 +348,14 @@ export default function AgentBuilder() {
                         max_tokens: formData.max_tokens,
                       });
                       if (error) {
-                        toast({ title: 'Failed to duplicate', description: error.message, variant: 'destructive' });
+                        toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
                       } else {
-                        toast({ title: 'Agent duplicated' });
+                        toast({ title: t('agents.duplicated') });
                         navigate('/agents');
                       }
                     }}
                   >
-                    Duplicate as Custom Agent
+                    {t('agents.duplicate')}
                   </Button>
                 </div>
               )}
