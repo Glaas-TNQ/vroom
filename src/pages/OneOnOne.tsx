@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Markdown } from '@/components/ui/markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -446,7 +447,11 @@ export default function OneOnOne() {
                           {message.agentName}
                         </p>
                       )}
-                      <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                      {message.role === 'assistant' ? (
+                        <Markdown content={message.content} className="text-sm" />
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                      )}
                     </div>
                     {message.role === 'user' && (
                       <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
