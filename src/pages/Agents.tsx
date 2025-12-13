@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Plus, Trash2, Edit } from 'lucide-react';
+import { Bot, Plus, Trash2 } from 'lucide-react';
 
 interface Agent {
   id: string;
@@ -77,47 +77,42 @@ export default function Agents() {
         ) : agents && agents.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {agents.map((agent) => (
-              <Card key={agent.id} className="relative group">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div 
-                      className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl"
-                      style={{ backgroundColor: agent.color + '20' }}
-                    >
-                      {iconMap[agent.icon] || '🤖'}
-                    </div>
-                    {!agent.is_system && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link to={`/agents/${agent.id}`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutate(agent.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+              <Link key={agent.id} to={`/agents/${agent.id}`} className="block">
+                <Card className="relative group hover:border-primary/50 transition-colors cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div 
+                        className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl"
+                        style={{ backgroundColor: agent.color + '20' }}
+                      >
+                        {iconMap[agent.icon] || '🤖'}
                       </div>
-                    )}
-                  </div>
-                  <CardTitle className="flex items-center gap-2">
-                    {agent.name}
-                    {agent.is_system && (
-                      <span className="text-xs bg-muted px-2 py-0.5 rounded font-normal">System</span>
-                    )}
-                  </CardTitle>
-                  <CardDescription>{agent.description || 'No description'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>Temperature: {agent.temperature}</div>
-                    <div>Max Tokens: {agent.max_tokens}</div>
-                  </div>
-                </CardContent>
-              </Card>
+                      {!agent.is_system && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              deleteMutation.mutate(agent.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                      {agent.name}
+                      {agent.is_system && (
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded font-normal">System</span>
+                      )}
+                    </CardTitle>
+                    <CardDescription>{agent.description || 'No description'}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
             ))}
           </div>
         ) : (
