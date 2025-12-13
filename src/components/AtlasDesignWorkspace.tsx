@@ -53,6 +53,7 @@ interface AtlasDesignWorkspaceProps {
   providers: ProviderProfile[] | undefined;
   onApply: (spec: AgentSpec, providerId: string) => void;
   onCancel: () => void;
+  initialDescription?: string;
 }
 
 export default function AtlasDesignWorkspace({
@@ -60,11 +61,12 @@ export default function AtlasDesignWorkspace({
   providers,
   onApply,
   onCancel,
+  initialDescription = '',
 }: AtlasDesignWorkspaceProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(initialDescription);
   const [providerId, setProviderId] = useState('');
   const [isDesigning, setIsDesigning] = useState(false);
   const [designedAgent, setDesignedAgent] = useState<AgentSpec | null>(null);
