@@ -80,11 +80,15 @@ export default function AtlasDesignWorkspace({
     setIsDesigning(true);
     setDesignedAgent(null);
 
+    // Get current locale from i18n
+    const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
+
     try {
       const { data, error } = await supabase.functions.invoke('design-agent', {
         body: { 
           description,
-          atlasPrompt
+          atlasPrompt,
+          locale
         }
       });
 
@@ -126,10 +130,12 @@ The user now wants to refine the design with the following request:
 Please update the agent specification accordingly, keeping what works and improving based on the feedback.
 `;
 
+      const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
       const { data, error } = await supabase.functions.invoke('design-agent', {
         body: { 
           description: refinementPrompt,
-          atlasPrompt
+          atlasPrompt,
+          locale
         }
       });
 

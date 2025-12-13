@@ -168,6 +168,9 @@ export default function ArchimedeDesignWorkspace({
     setMessages(prev => [...prev, { role: 'user', content: messageToSend }]);
     setIsThinking(true);
 
+    // Get current locale
+    const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
+
     try {
       // Build conversation history
       const conversationHistory = messages.map(m => ({
@@ -181,7 +184,8 @@ export default function ArchimedeDesignWorkspace({
           archimedePrompt,
           userId: user?.id,
           conversationHistory,
-          mode: 'conversational'
+          mode: 'conversational',
+          locale
         }
       });
 
@@ -252,12 +256,15 @@ The user now wants to refine the design with the following request:
 Please update the Room specification accordingly, keeping what works and improving based on the feedback.
 `;
 
+      const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
+      
       const { data, error } = await supabase.functions.invoke('design-room', {
         body: { 
           description: refinementPrompt,
           archimedePrompt,
           userId: user?.id,
-          mode: 'refine'
+          mode: 'refine',
+          locale
         }
       });
 

@@ -276,12 +276,16 @@ export default function OneOnOne() {
         content: m.content,
       }));
 
+      // Get current locale
+      const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
+      
       const { data, error } = await supabase.functions.invoke('one-on-one-chat', {
         body: {
           agentId: selectedAgent.id,
           message: userMessage.content,
           history: conversationHistory,
           providerOverrideId: selectedProviderId || undefined,
+          locale,
         },
       });
 

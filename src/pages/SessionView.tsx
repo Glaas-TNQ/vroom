@@ -74,8 +74,10 @@ export default function SessionView() {
   const runMutation = useMutation({
     mutationFn: async () => {
       setIsRunning(true);
+      // Get current locale
+      const locale = localStorage.getItem('i18nextLng')?.split('-')[0] || 'en';
       const { data, error } = await supabase.functions.invoke('run-session', {
-        body: { sessionId: id },
+        body: { sessionId: id, locale },
       });
       if (error) throw error;
       return data;
