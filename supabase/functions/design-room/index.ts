@@ -25,93 +25,18 @@ const METHODOLOGIES = `
 3. **parallel** - All agents contribute simultaneously, then synthesize. Good for independent analysis.
 `;
 
-interface ProviderProfile {
-  id: string;
-  provider_type: string;
-  api_key: string;
-  endpoint: string | null;
-  model: string | null;
-}
-
-async function callProviderAPI(provider: ProviderProfile, messages: any[], tools?: any[]): Promise<any> {
-  const { provider_type, api_key, endpoint, model } = provider;
-  
-  let url: string;
-  let headers: Record<string, string>;
-  let body: Record<string, unknown>;
-
-  switch (provider_type) {
-    case 'openai':
-      url = endpoint || 'https://api.openai.com/v1/chat/completions';
-      headers = {
-        'Authorization': `Bearer ${api_key}`,
-        'Content-Type': 'application/json',
-      };
-      body = {
-        model: model || 'gpt-4o-mini',
-        messages,
-        ...(tools && { tools, tool_choice: 'auto' }),
-      };
-      break;
-
-    case 'anthropic':
-      url = endpoint || 'https://api.anthropic.com/v1/messages';
-      headers = {
-        'x-api-key': api_key,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-      };
-      const systemMessage = messages.find(m => m.role === 'system')?.content || '';
-      const restMessages = messages.filter(m => m.role !== 'system');
-      body = {
-        model: model || 'claude-sonnet-4-20250514',
-        system: systemMessage,
-        messages: restMessages,
-        max_tokens: 4096,
-      };
-      if (tools) {
-        body.tools = tools.map(t => ({
-          name: t.function.name,
-          description: t.function.description,
-          input_schema: t.function.parameters,
-        }));
-      }
-      break;
-
-    default:
-      url = endpoint || 'https://api.openai.com/v1/chat/completions';
-      headers = {
-        'Authorization': `Bearer ${api_key}`,
-        'Content-Type': 'application/json',
-      };
-      body = {
-        model: model || 'gpt-4o-mini',
-        messages,
-      };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    console.error(`${provider_type} API error:`, response.status, text);
-    throw new Error(`${provider_type} API error: ${response.status}`);
-  }
-
-  return response.json();
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { description, archimedePrompt, userId, conversationHistory, mode, locale = 'en', providerId } = await req.json();
+    const { description, archimedePrompt, userId, conversationHistory, mode, locale = 'en' } = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
 
     if (!description) {
       throw new Error('Description is required');
@@ -119,57 +44,13 @@ serve(async (req) => {
 
     console.log('Archimede design request, mode:', mode || 'standard', 'locale:', locale);
 
+    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
+
+    // Get available agents for context
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get provider - either specified or user's default
-    let provider: ProviderProfile | null = null;
-    
-    if (providerId) {
-      const { data } = await supabase
-        .from('provider_profiles_decrypted')
-        .select('*')
-        .eq('id', providerId)
-        .single();
-      provider = data;
-    }
-    
-    if (!provider && userId) {
-      // Try to get user's default provider
-      const { data } = await supabase
-        .from('provider_profiles_decrypted')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_default', true)
-        .single();
-      provider = data;
-    }
-    
-    if (!provider && userId) {
-      // Try to get any provider for the user
-      const { data } = await supabase
-        .from('provider_profiles_decrypted')
-        .select('*')
-        .eq('user_id', userId)
-        .limit(1)
-        .single();
-      provider = data;
-    }
-
-    if (!provider) {
-      return new Response(JSON.stringify({ 
-        error: 'No API provider configured. Please configure a provider in Settings first.',
-        response: 'I need an API provider to design rooms. Please configure one in Settings → API Providers.'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
-
-    // Get available agents for context
     const { data: agents } = await supabase
       .from("agents")
       .select("id, name, description, is_system, system_prompt")
@@ -230,67 +111,174 @@ Design optimal Room configurations for deliberation, analysis, and decision-maki
       content: description
     });
 
-    const tools = [
-      {
-        type: 'function',
-        function: {
-          name: 'create_room_specification',
-          description: 'Create a complete Room specification when you have enough information to design the room',
-          parameters: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'A descriptive, memorable name for the Room' },
-              short_description: { type: 'string', description: 'A 2-3 sentence summary of the Room purpose and approach. Max 200 characters.' },
-              methodology: { type: 'string', enum: ['analytical_structured', 'strategic_executive', 'creative_brainstorming', 'lean_iterative', 'parallel_ensemble'], description: 'The deliberation methodology' },
-              methodology_justification: { type: 'string', description: 'Why this methodology was chosen' },
-              workflow_type: { type: 'string', enum: ['cyclic', 'sequential', 'parallel'], description: 'How agents interact during deliberation' },
-              workflow_justification: { type: 'string', description: 'Why this workflow was chosen' },
-              max_rounds: { type: 'number', description: 'Recommended number of deliberation rounds (3-15)' },
-              max_rounds_rationale: { type: 'string', description: 'Why this number of rounds' },
-              agent_ids: { type: 'array', items: { type: 'string' }, description: 'UUIDs of existing agents to include in this Room' },
-              agent_roles: { type: 'array', items: { type: 'object', properties: { agent_name: { type: 'string' }, role_in_room: { type: 'string' } } }, description: 'Each agent role and contribution in this Room' },
-              missing_agents: { type: 'array', items: { type: 'object', properties: { suggested_name: { type: 'string' }, expertise: { type: 'string' }, why_needed: { type: 'string' }, atlas_prompt: { type: 'string' } }, required: ['suggested_name', 'expertise', 'why_needed', 'atlas_prompt'] }, description: 'Agents that would be ideal but do not exist yet' },
-              ephemeral_agents: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, system_prompt: { type: 'string' }, role_in_room: { type: 'string' } }, required: ['name', 'system_prompt', 'role_in_room'] }, description: 'Throwaway agents for this specific session only' },
-              available_tools: { type: 'array', items: { type: 'string', enum: ['perplexity', 'tavily'] }, description: 'Research tools to enable' },
-              require_consensus: { type: 'boolean', description: 'Whether agents must reach consensus' },
-              objective_template: { type: 'string', description: 'A template for session objectives with placeholders' },
-              ideal_use_cases: { type: 'array', items: { type: 'string' }, description: 'When to use this Room' },
-              not_suitable_for: { type: 'array', items: { type: 'string' }, description: 'When NOT to use this Room' },
-              session_tips: { type: 'array', items: { type: 'string' }, description: 'Tips for effective sessions in this Room' }
-            },
-            required: ['name', 'short_description', 'methodology', 'workflow_type', 'max_rounds', 'agent_ids', 'objective_template'],
-            additionalProperties: false
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages,
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'create_room_specification',
+              description: 'Create a complete Room specification when you have enough information to design the room',
+              parameters: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: 'A descriptive, memorable name for the Room'
+                  },
+                  short_description: {
+                    type: 'string',
+                    description: 'A 2-3 sentence summary of the Room purpose and approach. Max 200 characters.'
+                  },
+                  methodology: {
+                    type: 'string',
+                    enum: ['analytical_structured', 'strategic_executive', 'creative_brainstorming', 'lean_iterative', 'parallel_ensemble'],
+                    description: 'The deliberation methodology'
+                  },
+                  methodology_justification: {
+                    type: 'string',
+                    description: 'Why this methodology was chosen'
+                  },
+                  workflow_type: {
+                    type: 'string',
+                    enum: ['cyclic', 'sequential', 'parallel'],
+                    description: 'How agents interact during deliberation'
+                  },
+                  workflow_justification: {
+                    type: 'string',
+                    description: 'Why this workflow was chosen'
+                  },
+                  max_rounds: {
+                    type: 'number',
+                    description: 'Recommended number of deliberation rounds (3-15)'
+                  },
+                  max_rounds_rationale: {
+                    type: 'string',
+                    description: 'Why this number of rounds'
+                  },
+                  agent_ids: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'UUIDs of existing agents to include in this Room'
+                  },
+                  agent_roles: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        agent_name: { type: 'string' },
+                        role_in_room: { type: 'string' }
+                      }
+                    },
+                    description: 'Each agent role and contribution in this Room'
+                  },
+                  missing_agents: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        suggested_name: { type: 'string' },
+                        expertise: { type: 'string' },
+                        why_needed: { type: 'string' },
+                        atlas_prompt: { type: 'string', description: 'Detailed prompt to give to Atlas for creating this agent' }
+                      },
+                      required: ['suggested_name', 'expertise', 'why_needed', 'atlas_prompt']
+                    },
+                    description: 'Agents that would be ideal but do not exist yet - include Atlas prompts for creating them'
+                  },
+                  ephemeral_agents: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        system_prompt: { type: 'string' },
+                        role_in_room: { type: 'string' }
+                      },
+                      required: ['name', 'system_prompt', 'role_in_room']
+                    },
+                    description: 'Throwaway agents for this specific session only - hyper-specialized for the task at hand'
+                  },
+                  available_tools: {
+                    type: 'array',
+                    items: { 
+                      type: 'string',
+                      enum: ['perplexity', 'tavily']
+                    },
+                    description: 'Research tools to enable (perplexity, tavily)'
+                  },
+                  require_consensus: {
+                    type: 'boolean',
+                    description: 'Whether agents must reach consensus'
+                  },
+                  objective_template: {
+                    type: 'string',
+                    description: 'A template for session objectives with placeholders like [CONTEXT], [FOCUS], [OUTPUTS]'
+                  },
+                  ideal_use_cases: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'When to use this Room'
+                  },
+                  not_suitable_for: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'When NOT to use this Room'
+                  },
+                  session_tips: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Tips for effective sessions in this Room'
+                  }
+                },
+                required: ['name', 'short_description', 'methodology', 'workflow_type', 'max_rounds', 'agent_ids', 'objective_template'],
+                additionalProperties: false
+              }
+            }
           }
-        }
-      }
-    ];
+        ],
+        tool_choice: 'auto'
+      }),
+    });
 
-    const data = await callProviderAPI(provider, messages, tools);
-    console.log('AI response received');
-
-    // Handle different response formats
-    let roomSpec = null;
-    let textResponse = '';
-
-    if (provider.provider_type === 'anthropic') {
-      const toolUse = data.content?.find((c: any) => c.type === 'tool_use');
-      if (toolUse && toolUse.name === 'create_room_specification') {
-        roomSpec = toolUse.input;
-      }
-      const textBlock = data.content?.find((c: any) => c.type === 'text');
-      textResponse = textBlock?.text || '';
-    } else {
-      const message = data.choices?.[0]?.message;
-      const toolCall = message?.tool_calls?.[0];
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
       
-      if (toolCall && toolCall.function.name === 'create_room_specification') {
-        roomSpec = JSON.parse(toolCall.function.arguments);
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-      textResponse = message?.content || '';
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: 'Payment required. Please add funds to your workspace.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    if (roomSpec) {
+    const data = await response.json();
+    console.log('AI response received');
+
+    const message = data.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
+
+    // If there's a tool call, parse and return the room specification
+    if (toolCall && toolCall.function.name === 'create_room_specification') {
+      const roomSpec = JSON.parse(toolCall.function.arguments);
       console.log('Room specification parsed:', roomSpec.name);
+
       return new Response(JSON.stringify({ 
         room: roomSpec, 
         availableAgents: agents,
@@ -303,12 +291,12 @@ Design optimal Room configurations for deliberation, analysis, and decision-maki
     }
 
     // Otherwise return conversational response
-    const defaultResponse = locale === 'it' 
+    const textResponse = message?.content || (locale === 'it' 
       ? "Ho bisogno di più informazioni sulle tue esigenze di deliberazione. Puoi descrivere quale decisione o analisi stai cercando di fare?"
-      : "I need more information about your deliberation needs. Can you describe what decision or analysis you're trying to make?";
+      : "I need more information about your deliberation needs. Can you describe what decision or analysis you're trying to make?");
     
     return new Response(JSON.stringify({ 
-      response: textResponse || defaultResponse,
+      response: textResponse,
       availableAgents: agents
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

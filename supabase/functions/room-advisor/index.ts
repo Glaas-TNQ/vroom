@@ -44,87 +44,6 @@ const METHODOLOGY_DESCRIPTIONS = {
   },
 };
 
-interface ProviderProfile {
-  id: string;
-  provider_type: string;
-  api_key: string;
-  endpoint: string | null;
-  model: string | null;
-}
-
-async function callProviderAPI(provider: ProviderProfile, messages: any[], tools?: any[]): Promise<any> {
-  const { provider_type, api_key, endpoint, model } = provider;
-  
-  let url: string;
-  let headers: Record<string, string>;
-  let body: Record<string, unknown>;
-
-  switch (provider_type) {
-    case 'openai':
-      url = endpoint || 'https://api.openai.com/v1/chat/completions';
-      headers = {
-        'Authorization': `Bearer ${api_key}`,
-        'Content-Type': 'application/json',
-      };
-      body = {
-        model: model || 'gpt-4o-mini',
-        messages,
-        ...(tools && { tools, tool_choice: { type: 'function', function: { name: 'provide_room_recommendation' } } }),
-      };
-      break;
-
-    case 'anthropic':
-      url = endpoint || 'https://api.anthropic.com/v1/messages';
-      headers = {
-        'x-api-key': api_key,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-      };
-      const systemMessage = messages.find(m => m.role === 'system')?.content || '';
-      const restMessages = messages.filter(m => m.role !== 'system');
-      body = {
-        model: model || 'claude-sonnet-4-20250514',
-        system: systemMessage,
-        messages: restMessages,
-        max_tokens: 4096,
-      };
-      if (tools) {
-        body.tools = tools.map(t => ({
-          name: t.function.name,
-          description: t.function.description,
-          input_schema: t.function.parameters,
-        }));
-        body.tool_choice = { type: 'tool', name: 'provide_room_recommendation' };
-      }
-      break;
-
-    default:
-      url = endpoint || 'https://api.openai.com/v1/chat/completions';
-      headers = {
-        'Authorization': `Bearer ${api_key}`,
-        'Content-Type': 'application/json',
-      };
-      body = {
-        model: model || 'gpt-4o-mini',
-        messages,
-      };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    console.error(`${provider_type} API error:`, response.status, text);
-    throw new Error(`${provider_type} API error: ${response.status}`);
-  }
-
-  return response.json();
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -137,41 +56,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get user's provider
-    let provider: ProviderProfile | null = null;
-    
-    if (userId) {
-      // Try to get user's default provider
-      const { data } = await supabase
-        .from('provider_profiles_decrypted')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_default', true)
-        .single();
-      provider = data;
-    }
-    
-    if (!provider && userId) {
-      // Try to get any provider for the user
-      const { data } = await supabase
-        .from('provider_profiles_decrypted')
-        .select('*')
-        .eq('user_id', userId)
-        .limit(1)
-        .single();
-      provider = data;
-    }
-
-    if (!provider) {
-      return new Response(JSON.stringify({ 
-        error: 'No API provider configured. Please configure a provider in Settings first.',
-        response: 'I need an API provider to help you. Please configure one in Settings → API Providers.'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Get user's available agents with full details
     const { data: agents } = await supabase
@@ -248,6 +132,8 @@ For missing agents, provide a clear description that could be used to create the
 
 You are conversational and helpful. Guide users toward the optimal room configuration for their specific needs.`;
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
     // Build messages with conversation history
     const messages: { role: string; content: string }[] = [
       { role: "system", content: systemPrompt }
@@ -260,59 +146,101 @@ You are conversational and helpful. Guide users toward the optimal room configur
     }
     messages.push({ role: "user", content: message });
 
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "provide_room_recommendation",
-          description: "Provide a structured room recommendation with agent suggestions",
-          parameters: {
-            type: "object",
-            properties: {
-              response_text: { type: "string", description: "The full conversational response to show the user" },
-              recommendation: {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "provide_room_recommendation",
+              description: "Provide a structured room recommendation with agent suggestions",
+              parameters: {
                 type: "object",
                 properties: {
-                  methodology: { type: "string", enum: ["analytical_structured", "strategic_executive", "creative_brainstorming", "lean_iterative", "parallel_ensemble"] },
-                  workflow_type: { type: "string", enum: ["cyclic", "sequential_pipeline", "concurrent"] },
-                  max_rounds: { type: "number" },
-                  suggested_room_name: { type: "string" },
-                  suggested_description: { type: "string" },
-                  objective_template: { type: "string" }
-                }
-              },
-              suggested_agents: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    agent_id: { type: "string" },
-                    agent_name: { type: "string" },
-                    role_in_room: { type: "string" }
+                  response_text: {
+                    type: "string",
+                    description: "The full conversational response to show the user"
+                  },
+                  recommendation: {
+                    type: "object",
+                    properties: {
+                      methodology: {
+                        type: "string",
+                        enum: ["analytical_structured", "strategic_executive", "creative_brainstorming", "lean_iterative", "parallel_ensemble"]
+                      },
+                      workflow_type: {
+                        type: "string",
+                        enum: ["cyclic", "sequential_pipeline", "concurrent"]
+                      },
+                      max_rounds: { type: "number" },
+                      suggested_room_name: { type: "string" },
+                      suggested_description: { type: "string" },
+                      objective_template: { type: "string" }
+                    }
+                  },
+                  suggested_agents: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        agent_id: { type: "string" },
+                        agent_name: { type: "string" },
+                        role_in_room: { type: "string" }
+                      }
+                    }
+                  },
+                  missing_agents: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        suggested_name: { type: "string" },
+                        expertise: { type: "string" },
+                        why_needed: { type: "string" },
+                        atlas_prompt: { type: "string", description: "A prompt to give Atlas to create this agent" }
+                      }
+                    }
+                  },
+                  ready_to_create: {
+                    type: "boolean",
+                    description: "True if the recommendation is complete enough to create a room"
                   }
-                }
-              },
-              missing_agents: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    suggested_name: { type: "string" },
-                    expertise: { type: "string" },
-                    why_needed: { type: "string" },
-                    atlas_prompt: { type: "string" }
-                  }
-                }
-              },
-              ready_to_create: { type: "boolean", description: "True if the recommendation is complete enough to create a room" }
-            },
-            required: ["response_text"]
+                },
+                required: ["response_text"]
+              }
+            }
           }
-        }
-      }
-    ];
+        ],
+        tool_choice: { type: "function", function: { name: "provide_room_recommendation" } }
+      }),
+    });
 
-    const data = await callProviderAPI(provider, messages, tools);
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required, please add funds." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      throw new Error("AI gateway error");
+    }
+
+    const data = await response.json();
     
     let result = {
       response: "I'm sorry, I couldn't process your request.",
@@ -323,11 +251,10 @@ You are conversational and helpful. Guide users toward the optimal room configur
       agents: agentDetails,
     };
 
-    // Handle different response formats
-    if (provider.provider_type === 'anthropic') {
-      const toolUse = data.content?.find((c: any) => c.type === 'tool_use');
-      if (toolUse && toolUse.name === 'provide_room_recommendation') {
-        const parsed = toolUse.input;
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall && toolCall.function.name === "provide_room_recommendation") {
+      try {
+        const parsed = JSON.parse(toolCall.function.arguments);
         result = {
           response: parsed.response_text || result.response,
           recommendation: parsed.recommendation || null,
@@ -336,34 +263,14 @@ You are conversational and helpful. Guide users toward the optimal room configur
           ready_to_create: parsed.ready_to_create || false,
           agents: agentDetails,
         };
-      } else {
-        const textBlock = data.content?.find((c: any) => c.type === 'text');
-        if (textBlock) {
-          result.response = textBlock.text;
-        }
+      } catch (e) {
+        console.error("Failed to parse tool call:", e);
       }
     } else {
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      if (toolCall && toolCall.function.name === "provide_room_recommendation") {
-        try {
-          const parsed = JSON.parse(toolCall.function.arguments);
-          result = {
-            response: parsed.response_text || result.response,
-            recommendation: parsed.recommendation || null,
-            suggested_agents: parsed.suggested_agents || [],
-            missing_agents: parsed.missing_agents || [],
-            ready_to_create: parsed.ready_to_create || false,
-            agents: agentDetails,
-          };
-        } catch (e) {
-          console.error("Failed to parse tool call:", e);
-        }
-      } else {
-        // Fallback to plain text response
-        const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          result.response = content;
-        }
+      // Fallback to plain text response
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        result.response = content;
       }
     }
 

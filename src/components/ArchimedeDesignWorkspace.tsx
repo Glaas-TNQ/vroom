@@ -466,20 +466,34 @@ Please update the Room specification accordingly, keeping what works and improvi
         </div>
 
         <Card className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
+          <CardHeader className="pb-3 border-b shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                <Sparkles className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle>Archimede</CardTitle>
+                <CardDescription className="mt-1">
+                  Your AI Room Design Assistant
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
               {messages.map((message, index) => (
-                <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                <div key={index} className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                   {message.role === 'assistant' && (
-                    <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
-                      <Bot className="h-4 w-4 text-purple-500" />
+                    <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
+                      <Bot className="h-5 w-5 text-purple-500" />
                     </div>
                   )}
                   <div
                     className={`rounded-xl ${
                       message.role === 'user'
-                        ? 'bg-primary text-primary-foreground max-w-[75%] px-4 py-3'
-                        : 'bg-muted/50 flex-1 max-w-[85%] px-4 py-3 border'
+                        ? 'bg-primary text-primary-foreground max-w-[75%] p-5'
+                        : 'bg-muted/50 flex-1 max-w-[85%] p-5 border'
                     }`}
                   >
                     <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -488,22 +502,22 @@ Please update the Room specification accordingly, keeping what works and improvi
                     {message.role === 'assistant' && message.recommendation && renderRecommendationCard(message.recommendation)}
                   </div>
                   {message.role === 'user' && (
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
-                      <User className="h-4 w-4 text-primary-foreground" />
+                    <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
+                      <User className="h-5 w-5 text-primary-foreground" />
                     </div>
                   )}
                 </div>
               ))}
               {isThinking && (
-                <div className="flex gap-3">
-                  <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
-                    <Bot className="h-4 w-4 text-purple-500" />
+                <div className="flex gap-4">
+                  <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0 mt-1">
+                    <Bot className="h-5 w-5 text-purple-500" />
                   </div>
-                  <div className="bg-muted/50 rounded-xl px-4 py-3 border">
+                  <div className="bg-muted/50 rounded-xl p-5 border">
                     <div className="flex gap-2">
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" />
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.15s]" />
-                      <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.3s]" />
+                      <span className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full animate-bounce" />
+                      <span className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.3s]" />
                     </div>
                   </div>
                 </div>
@@ -512,21 +526,21 @@ Please update the Room specification accordingly, keeping what works and improvi
             </div>
           </div>
 
-          <div className="border-t p-4 shrink-0 bg-background">
+          <div className="border-t p-5 shrink-0 bg-background">
             <div className="flex gap-3">
               <Textarea
                 placeholder="Describe your deliberation, analysis, or decision-making need..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                rows={2}
-                className="resize-none flex-1"
+                rows={3}
+                className="resize-none flex-1 text-base"
                 disabled={isThinking}
               />
               <Button 
                 onClick={() => sendChatMessage()} 
                 disabled={!chatInput.trim() || isThinking} 
-                className="shrink-0 h-auto px-5"
+                className="shrink-0 h-auto px-6"
                 size="lg"
               >
                 <Send className="h-5 w-5" />

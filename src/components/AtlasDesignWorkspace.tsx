@@ -77,15 +77,6 @@ export default function AtlasDesignWorkspace({
   const handleDesign = async () => {
     if (!description.trim() || !atlasPrompt) return;
     
-    if (!providerId) {
-      toast({ 
-        title: t('common.error'), 
-        description: 'Please select an API provider before designing.',
-        variant: 'destructive' 
-      });
-      return;
-    }
-    
     setIsDesigning(true);
     setDesignedAgent(null);
 
@@ -97,8 +88,7 @@ export default function AtlasDesignWorkspace({
         body: { 
           description,
           atlasPrompt,
-          locale,
-          providerId
+          locale
         }
       });
 
@@ -233,7 +223,7 @@ Please update the agent specification accordingly, keeping what works and improv
 
             <Button 
               onClick={handleDesign} 
-              disabled={!description.trim() || !providerId}
+              disabled={!description.trim()}
               className="w-full"
               size="lg"
             >
