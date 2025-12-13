@@ -4,8 +4,45 @@ import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, History, Key, Play, Plus, LayoutGrid } from 'lucide-react';
+import { Bot, History, Key, Play, LayoutGrid, FileEdit, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface Session {
+  id: string;
+  topic: string;
+  status: 'draft' | 'running' | 'completed' | 'cancelled';
+  created_at: string;
+}
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
+const statusConfig = {
+  draft: {
+    border: 'border-l-[hsl(var(--status-draft))]',
+    icon: FileEdit,
+    variant: 'outline' as const,
+  },
+  running: {
+    border: 'border-l-[hsl(var(--status-running))]',
+    icon: Play,
+    variant: 'default' as const,
+  },
+  completed: {
+    border: 'border-l-[hsl(var(--status-completed))]',
+    icon: CheckCircle2,
+    variant: 'secondary' as const,
+  },
+  cancelled: {
+    border: 'border-l-[hsl(var(--status-cancelled))]',
+    icon: XCircle,
+    variant: 'destructive' as const,
+  },
+};
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -36,7 +73,7 @@ export default function Dashboard() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(5);
-      return data || [];
+      return (data || []) as Session[];
     },
   });
 
@@ -107,19 +144,37 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {recentSessions && recentSessions.length > 0 ? (
-                <div className="space-y-3">
-                  {recentSessions.map((session) => (
-                    <Link
-                      key={session.id}
-                      to={`/sessions/${session.id}`}
-                      className="block p-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                      <div className="font-medium">{session.topic}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {t(`sessions.status.${session.status}`)} • {new Date(session.created_at).toLocaleDateString()}
-                      </div>
-                    </Link>
-                  ))}
+                <div className="space-y-2">
+                  {recentSessions.map((session) => {
+                    const config = statusConfig[session.status];
+                    const Icon = config.icon;
+                    return (
+                      <Link
+                        key={session.id}
+                        to={`/sessions/${session.id}`}
+                        className={cn(
+                          "block p-3 rounded-lg border border-l-4 hover:bg-accent/50 transition-colors",
+                          config.border
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">
+                              {truncateText(session.topic, 60)}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {new Date(session.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <Badge variant={config.variant} className="gap-1 text-xs shrink-0">
+                            <Icon className="h-3 w-3" />
+                            {t(`sessions.status.${session.status}`)}
+                          </Badge>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -141,7 +196,7 @@ export default function Dashboard() {
             <CardContent className="space-y-3">
               <Link 
                 to="/settings" 
-                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
               >
                 <Key className="h-5 w-5 text-primary" />
                 <div>
@@ -151,7 +206,7 @@ export default function Dashboard() {
               </Link>
               <Link 
                 to="/agents/new" 
-                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
               >
                 <Bot className="h-5 w-5 text-primary" />
                 <div>
@@ -161,7 +216,7 @@ export default function Dashboard() {
               </Link>
               <Link 
                 to="/sessions/new" 
-                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
               >
                 <Play className="h-5 w-5 text-primary" />
                 <div>
