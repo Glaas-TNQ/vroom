@@ -16,9 +16,13 @@ serve(async (req) => {
 
     let testUrl: string;
     let testBody: any;
+    let headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
     if (provider_type === "openai") {
       testUrl = "https://api.openai.com/v1/chat/completions";
+      headers["Authorization"] = `Bearer ${api_key}`;
       testBody = {
         model: model || "gpt-4o-mini",
         messages: [{ role: "user", content: "Say 'OK'" }],
@@ -26,13 +30,33 @@ serve(async (req) => {
       };
     } else if (provider_type === "anthropic") {
       testUrl = "https://api.anthropic.com/v1/messages";
+      headers["x-api-key"] = api_key;
+      headers["anthropic-version"] = "2023-06-01";
       testBody = {
-        model: model || "claude-3-5-haiku-20241022",
+        model: model || "claude-haiku-4-5",
         messages: [{ role: "user", content: "Say 'OK'" }],
         max_tokens: 5,
       };
+    } else if (provider_type === "perplexity") {
+      testUrl = "https://api.perplexity.ai/chat/completions";
+      headers["Authorization"] = `Bearer ${api_key}`;
+      testBody = {
+        model: model || "sonar",
+        messages: [{ role: "user", content: "Say 'OK'" }],
+        max_tokens: 5,
+      };
+    } else if (provider_type === "tavily") {
+      testUrl = "https://api.tavily.com/search";
+      testBody = {
+        api_key: api_key,
+        query: "test",
+        max_results: 1,
+      };
+      // Tavily uses api_key in body, not header
+      delete headers["Authorization"];
     } else if (provider_type === "custom" && endpoint) {
       testUrl = endpoint;
+      headers["Authorization"] = `Bearer ${api_key}`;
       testBody = {
         model: model || "default",
         messages: [{ role: "user", content: "Say 'OK'" }],
@@ -42,16 +66,7 @@ serve(async (req) => {
       throw new Error("Invalid provider configuration");
     }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (provider_type === "anthropic") {
-      headers["x-api-key"] = api_key;
-      headers["anthropic-version"] = "2023-06-01";
-    } else {
-      headers["Authorization"] = `Bearer ${api_key}`;
-    }
+    console.log("Testing URL:", testUrl);
 
     const response = await fetch(testUrl, {
       method: "POST",
@@ -59,12 +74,15 @@ serve(async (req) => {
       body: JSON.stringify(testBody),
     });
 
+    console.log("Response status:", response.status);
+
     if (response.ok) {
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
       const error = await response.text();
+      console.error("API error:", error);
       return new Response(JSON.stringify({ success: false, error }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

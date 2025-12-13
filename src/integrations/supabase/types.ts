@@ -245,7 +245,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      provider_type: "openai" | "anthropic" | "custom"
+      provider_type: "openai" | "anthropic" | "custom" | "perplexity" | "tavily"
       session_status: "draft" | "running" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -374,7 +374,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      provider_type: ["openai", "anthropic", "custom"],
+      provider_type: ["openai", "anthropic", "custom", "perplexity", "tavily"],
       session_status: ["draft", "running", "completed", "cancelled"],
     },
   },

@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Key, Plus, Trash2, Check, Loader2 } from 'lucide-react';
 
-type ProviderType = 'openai' | 'anthropic' | 'custom';
+type ProviderType = 'openai' | 'anthropic' | 'perplexity' | 'tavily' | 'custom';
 
 interface ProviderProfile {
   id: string;
@@ -24,7 +24,7 @@ interface ProviderProfile {
   is_default: boolean;
 }
 
-// Models updated as of December 2025
+// Models updated as of December 2025 (from official docs)
 const OPENAI_MODELS = [
   { value: 'gpt-5', label: 'GPT-5 (Latest)' },
   { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
@@ -37,12 +37,29 @@ const OPENAI_MODELS = [
   { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' },
 ];
 
+// Anthropic models from official docs - December 2025
 const ANTHROPIC_MODELS = [
-  { value: 'claude-sonnet-4-5-20250514', label: 'Claude Sonnet 4.5 (Latest)' },
-  { value: 'claude-opus-4-1-20250805', label: 'Claude Opus 4.1' },
-  { value: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet' },
-  { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Fast)' },
+  { value: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Premium)' },
+  { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Smart)' },
+  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (Fast)' },
+  { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 (Snapshot)' },
+  { value: 'claude-opus-4-5-20251101', label: 'Claude Opus 4.5 (Snapshot)' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Snapshot)' },
+];
+
+// Perplexity Sonar models - December 2025
+const PERPLEXITY_MODELS = [
+  { value: 'sonar', label: 'Sonar (Fast Search)' },
+  { value: 'sonar-pro', label: 'Sonar Pro (Multi-step Reasoning)' },
+  { value: 'sonar-reasoning', label: 'Sonar Reasoning (Chain-of-thought)' },
+  { value: 'sonar-reasoning-pro', label: 'Sonar Reasoning Pro (Advanced)' },
+  { value: 'sonar-deep-research', label: 'Sonar Deep Research (Expert)' },
+];
+
+// Tavily is a search API, not a model-based service
+const TAVILY_MODELS = [
+  { value: 'search', label: 'Search API' },
+  { value: 'extract', label: 'Extract API' },
 ];
 
 export default function Settings() {
@@ -64,6 +81,8 @@ export default function Settings() {
     switch (provider) {
       case 'openai': return OPENAI_MODELS;
       case 'anthropic': return ANTHROPIC_MODELS;
+      case 'perplexity': return PERPLEXITY_MODELS;
+      case 'tavily': return TAVILY_MODELS;
       default: return [];
     }
   };
@@ -160,6 +179,8 @@ export default function Settings() {
     switch (type) {
       case 'openai': return '🤖';
       case 'anthropic': return '🧠';
+      case 'perplexity': return '🔍';
+      case 'tavily': return '🌐';
       case 'custom': return '⚙️';
     }
   };
@@ -204,9 +225,11 @@ export default function Settings() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover z-50">
                       <SelectItem value="openai">OpenAI</SelectItem>
                       <SelectItem value="anthropic">Anthropic</SelectItem>
+                      <SelectItem value="perplexity">Perplexity (Search)</SelectItem>
+                      <SelectItem value="tavily">Tavily (Web Search)</SelectItem>
                       <SelectItem value="custom">Custom Endpoint</SelectItem>
                     </SelectContent>
                   </Select>
