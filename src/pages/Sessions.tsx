@@ -2,12 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { History, Play, Plus, Trash2, Eye } from 'lucide-react';
+import { History, Play, Plus, Trash2, Eye, Clock, CheckCircle2, XCircle, FileEdit } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Session {
   id: string;
@@ -19,6 +20,34 @@ interface Session {
   created_at: string;
   completed_at: string | null;
 }
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
+const statusConfig = {
+  draft: {
+    border: 'border-l-[hsl(var(--status-draft))]',
+    icon: FileEdit,
+    variant: 'outline' as const,
+  },
+  running: {
+    border: 'border-l-[hsl(var(--status-running))]',
+    icon: Play,
+    variant: 'default' as const,
+  },
+  completed: {
+    border: 'border-l-[hsl(var(--status-completed))]',
+    icon: CheckCircle2,
+    variant: 'secondary' as const,
+  },
+  cancelled: {
+    border: 'border-l-[hsl(var(--status-cancelled))]',
+    icon: XCircle,
+    variant: 'destructive' as const,
+  },
+};
 
 export default function Sessions() {
   const { t } = useTranslation();
@@ -49,13 +78,14 @@ export default function Sessions() {
   });
 
   const getStatusBadge = (status: Session['status']) => {
-    const variants: Record<Session['status'], 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      draft: 'outline',
-      running: 'default',
-      completed: 'secondary',
-      cancelled: 'destructive',
-    };
-    return <Badge variant={variants[status]}>{t(`sessions.status.${status}`)}</Badge>;
+    const config = statusConfig[status];
+    const Icon = config.icon;
+    return (
+      <Badge variant={config.variant} className="gap-1 text-xs">
+        <Icon className="h-3 w-3" />
+        {t(`sessions.status.${status}`)}
+      </Badge>
+    );
   };
 
   return (
@@ -77,60 +107,81 @@ export default function Sessions() {
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
         ) : sessions && sessions.length > 0 ? (
-          <div className="space-y-4">
-            {sessions.map((session) => (
-              <Card key={session.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="flex items-center gap-3">
-                        {session.topic}
-                        {getStatusBadge(session.status)}
-                      </CardTitle>
-                      {session.objective && (
-                        <CardDescription>{session.objective}</CardDescription>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/sessions/${session.id}`}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          {t('common.view')}
-                        </Link>
-                      </Button>
-                      {session.status === 'draft' && (
-                        <Button size="sm" asChild>
+          <div className="space-y-3">
+            {sessions.map((session) => {
+              const config = statusConfig[session.status];
+              return (
+                <Card 
+                  key={session.id} 
+                  className={cn(
+                    "group border-l-4 transition-all duration-200 hover:shadow-md",
+                    config.border
+                  )}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-lg font-semibold truncate max-w-[500px]">
+                            {truncateText(session.topic, 80)}
+                          </h3>
+                          {getStatusBadge(session.status)}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" asChild>
                           <Link to={`/sessions/${session.id}`}>
-                            <Play className="h-4 w-4 mr-1" />
-                            {t('common.start')}
+                            <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(session.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                        {session.status === 'draft' && (
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/sessions/${session.id}`}>
+                              <Play className="h-4 w-4 text-primary" />
+                            </Link>
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(session.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
-                    <span>•</span>
-                    <span>{t('sessions.created')} {new Date(session.created_at).toLocaleDateString()}</span>
-                    {session.completed_at && (
-                      <>
-                        <span>•</span>
-                        <span>{t('sessions.status.completed')} {new Date(session.completed_at).toLocaleDateString()}</span>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  
+                  {session.objective && (
+                    <CardContent className="pb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {session.objective}
+                      </p>
+                    </CardContent>
+                  )}
+                  
+                  <CardFooter className="pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {t('sessions.round')} {session.current_round}/{session.max_rounds}
+                      </span>
+                      <span className="text-border">•</span>
+                      <span>{new Date(session.created_at).toLocaleDateString()}</span>
+                      {session.completed_at && (
+                        <>
+                          <span className="text-border">•</span>
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {new Date(session.completed_at).toLocaleDateString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card>
