@@ -197,7 +197,7 @@ export default function Settings() {
 
   return (
     <AppLayout title={t('settings.title')}>
-      <div className="max-w-3xl space-y-6">
+      <div className="space-y-6">
         {/* Preferences */}
         <Card>
           <CardHeader>
