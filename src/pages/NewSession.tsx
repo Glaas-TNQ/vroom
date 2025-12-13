@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { RoomAdvisorDialog } from '@/components/RoomAdvisorDialog';
 import { ArrowLeft, ArrowRight, Play, LayoutGrid, Sparkles, RotateCcw, Users, Zap } from 'lucide-react';
 
 interface Agent {
@@ -74,6 +75,7 @@ export default function NewSession() {
 
   const [agentProviderOverrides, setAgentProviderOverrides] = useState<AgentProviderOverride[]>([]);
   const [globalProviderId, setGlobalProviderId] = useState<string | null>(null);
+  const [roomAdvisorOpen, setRoomAdvisorOpen] = useState(false);
 
   const getMethodologyLabel = (methodology: string) => {
     return t(`methodologies.${methodology}.label`, { defaultValue: methodology });
@@ -306,7 +308,7 @@ export default function NewSession() {
             </CardHeader>
             <CardContent className="space-y-6">
               <button
-                onClick={() => navigate('/rooms/advisor')}
+                onClick={() => setRoomAdvisorOpen(true)}
                 className="w-full flex items-center gap-4 p-4 rounded-lg border border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
               >
                 <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
@@ -318,6 +320,13 @@ export default function NewSession() {
                 </div>
                 <ArrowRight className="h-5 w-5 text-primary" />
               </button>
+
+              <RoomAdvisorDialog
+                open={roomAdvisorOpen}
+                onOpenChange={setRoomAdvisorOpen}
+                rooms={rooms || []}
+                onSelectRoom={selectRoom}
+              />
 
               {systemRooms.length > 0 && (
                 <div className="space-y-3">

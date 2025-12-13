@@ -271,7 +271,10 @@
     "globalProvider": "Global Provider for Session",
     "selectProvider": "Select provider",
     "applyToAll": "Apply to All",
-    "globalProviderDesc": "Select a provider and click 'Apply to All' to set it for all selected agents"
+    "globalProviderDesc": "Select a provider and click 'Apply to All' to set it for all selected agents",
+    "roomAdvisor": "Room Advisor",
+    "describeNeed": "Describe what you need to deliberate on...",
+    "useThisRoom": "Use This Room"
   },
   "roomAdvisor": {
     "title": "Room Advisor",
