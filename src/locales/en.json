@@ -105,7 +105,8 @@
     "applyDesign": "Apply This Design",
     "atlasPlaceholder": "Example: I need an agent that can analyze legal contracts and identify potential risks, compliance issues, and unfavorable clauses. It should be thorough but also practical in suggesting alternatives.",
     "unlimitedTokens": "Unlimited Tokens",
-    "unlimitedTokensHint": "Remove token limit - agent can use as many tokens as needed"
+    "unlimitedTokensHint": "Remove token limit - agent can use as many tokens as needed",
+    "preview": "Agent Preview"
   },
 "oneOnOne": {
     "title": "1 on 1 Chat",
