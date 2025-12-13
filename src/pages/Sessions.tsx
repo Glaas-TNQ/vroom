@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { History, Play, Plus, Trash2, Eye, Clock, CheckCircle2, XCircle, FileEdit, Target } from 'lucide-react';
+import { History, Play, Plus, Trash2, Clock, CheckCircle2, XCircle, FileEdit, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Session {
@@ -118,48 +118,43 @@ export default function Sessions() {
               return (
                 <HoverCard key={session.id} openDelay={300} closeDelay={100}>
                   <HoverCardTrigger asChild>
-                    <Card 
-                      className={cn(
-                        "group border-l-4 transition-all duration-200 hover:shadow-md cursor-pointer",
-                        config.border
-                      )}
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <h3 className="text-lg font-semibold truncate max-w-[500px]">
-                                {truncateText(session.topic, 80)}
-                              </h3>
-                              {getStatusBadge(session.status)}
+                    <Link to={`/sessions/${session.id}`} className="block">
+                      <Card 
+                        className={cn(
+                          "group border-l-4 transition-all duration-200 hover:shadow-md cursor-pointer",
+                          config.border
+                        )}
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <h3 className="text-lg font-semibold truncate max-w-[500px]">
+                                  {truncateText(session.topic, 80)}
+                                </h3>
+                                {getStatusBadge(session.status)}
+                              </div>
+                            </div>
+                            <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {session.status === 'draft' && (
+                                <Button variant="ghost" size="icon" onClick={(e) => e.preventDefault()}>
+                                  <Play className="h-4 w-4 text-primary" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deleteMutation.mutate(session.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link to={`/sessions/${session.id}`}>
-                                <Eye className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            {session.status === 'draft' && (
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link to={`/sessions/${session.id}`}>
-                                  <Play className="h-4 w-4 text-primary" />
-                                </Link>
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteMutation.mutate(session.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
+                        </CardHeader>
                       
                       {session.objective && (
                         <CardContent className="pb-2">
@@ -188,7 +183,8 @@ export default function Sessions() {
                           )}
                         </div>
                       </CardFooter>
-                    </Card>
+                      </Card>
+                    </Link>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80" side="top" align="start">
                     <div className="space-y-3">

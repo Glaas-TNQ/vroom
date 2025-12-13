@@ -7,9 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Play, Square, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, Square, Download, Loader2, GripVertical } from 'lucide-react';
+import { Markdown } from '@/components/ui/markdown';
 
 interface AgentConfig {
   id: string;
@@ -174,8 +176,8 @@ export default function SessionView() {
 
   return (
     <AppLayout title={t('sessions.view')}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="h-[calc(100vh-8rem)] flex flex-col">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('sessionView.backToSessions')}
@@ -206,67 +208,72 @@ export default function SessionView() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>{session.topic}</CardTitle>
+        <ResizablePanelGroup direction="horizontal" className="flex-1 rounded-lg border">
+          {/* Main Content - Deliberation */}
+          <ResizablePanel defaultSize={75} minSize={50}>
+            <div className="h-full flex flex-col">
+              {/* Session Header */}
+              <div className="p-4 border-b bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-semibold">{session.topic}</h2>
                   {getStatusBadge(session.status)}
                 </div>
                 {session.objective && (
-                  <CardDescription>{session.objective}</CardDescription>
+                  <p className="text-sm text-muted-foreground">{session.objective}</p>
                 )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4 text-sm text-muted-foreground">
+                <div className="flex gap-4 text-xs text-muted-foreground mt-2">
                   <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
                   <span>•</span>
                   <span>{session.agent_config.length} {t('sessions.agents')}</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('sessionView.deliberation')}</CardTitle>
-              </CardHeader>
-              <CardContent>
+              {/* Deliberation Messages */}
+              <ScrollArea className="flex-1 p-4">
                 {session.transcript.length > 0 ? (
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
-                      {session.transcript.map((msg, i) => {
-                        const agent = session.agent_config.find(a => a.id === msg.agent_id);
-                        return (
-                          <div key={i} className="flex gap-3">
+                  <div className="space-y-4 max-w-4xl">
+                    {session.transcript.map((msg, i) => {
+                      const agent = session.agent_config.find(a => a.id === msg.agent_id);
+                      const agentColor = agent?.color || '#6366f1';
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className="rounded-lg p-4 border-l-4"
+                          style={{ 
+                            borderLeftColor: agentColor,
+                            backgroundColor: `${agentColor}08`
+                          }}
+                        >
+                          <div className="flex items-center gap-3 mb-3">
                             <div
-                              className="h-8 w-8 rounded-lg flex items-center justify-center text-sm shrink-0"
-                              style={{ backgroundColor: (agent?.color || '#6366f1') + '20' }}
+                              className="h-9 w-9 rounded-lg flex items-center justify-center text-base shrink-0"
+                              style={{ backgroundColor: `${agentColor}20` }}
                             >
                               {iconMap[agent?.icon || 'bot'] || '🤖'}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{msg.agent_name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {t('sessions.round')} {msg.round}
-                                </span>
-                              </div>
-                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            <div>
+                              <span className="font-semibold">{msg.agent_name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {t('sessions.round')} {msg.round}
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
-                      {isRunning && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>{t('sessionView.agentsDeliberating')}</span>
+                          <div className="pl-12">
+                            <Markdown content={msg.content} />
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </ScrollArea>
+                      );
+                    })}
+                    {isRunning && (
+                      <div className="flex items-center gap-2 text-muted-foreground p-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{t('sessionView.agentsDeliberating')}</span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-12 text-muted-foreground">
                     {session.status === 'draft' ? (
                       <p>{t('sessionView.clickStart')}</p>
                     ) : (
@@ -274,51 +281,60 @@ export default function SessionView() {
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </ScrollArea>
+            </div>
+          </ResizablePanel>
 
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('nav.agents')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {session.agent_config.map((agent) => (
-                    <div key={agent.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-                      <div
-                        className="h-8 w-8 rounded-lg flex items-center justify-center text-sm"
-                        style={{ backgroundColor: agent.color + '20' }}
+          <ResizableHandle withHandle>
+            <div className="flex h-full items-center justify-center">
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </ResizableHandle>
+
+          {/* Sidebar - Agents and Action Items */}
+          <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                {/* Agents */}
+                <div>
+                  <h3 className="font-semibold text-sm mb-3">{t('nav.agents')}</h3>
+                  <div className="space-y-2">
+                    {session.agent_config.map((agent) => (
+                      <div 
+                        key={agent.id} 
+                        className="flex items-center gap-2 p-2 rounded-lg"
+                        style={{ backgroundColor: `${agent.color}10` }}
                       >
-                        {iconMap[agent.icon] || '🤖'}
+                        <div
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-sm"
+                          style={{ backgroundColor: `${agent.color}20` }}
+                        >
+                          {iconMap[agent.icon] || '🤖'}
+                        </div>
+                        <span className="font-medium text-sm">{agent.name}</span>
                       </div>
-                      <span className="font-medium text-sm">{agent.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {session.action_items && session.action_items.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('sessionView.actionItems')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {session.action_items.map((item: any, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="text-primary">•</span>
-                        <span>{typeof item === 'string' ? item : item.title}</span>
-                      </li>
                     ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+                  </div>
+                </div>
+
+                {/* Action Items */}
+                {session.action_items && session.action_items.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-sm mb-3">{t('sessionView.actionItems')}</h3>
+                    <ul className="space-y-2">
+                      {session.action_items.map((item: any, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm p-2 rounded-lg bg-muted/50">
+                          <span className="text-primary font-bold">{i + 1}.</span>
+                          <span>{typeof item === 'string' ? item : item.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </AppLayout>
   );
