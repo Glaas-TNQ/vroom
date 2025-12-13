@@ -13,6 +13,9 @@ import Settings from "./pages/Settings";
 import Sessions from "./pages/Sessions";
 import SessionView from "./pages/SessionView";
 import NewSession from "./pages/NewSession";
+import Rooms from "./pages/Rooms";
+import RoomBuilder from "./pages/RoomBuilder";
+import RoomAdvisor from "./pages/RoomAdvisor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,10 @@ const App = () => (
             <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
             <Route path="/agents/new" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
             <Route path="/agents/:id" element={<ProtectedRoute><AgentBuilder /></ProtectedRoute>} />
+            <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+            <Route path="/rooms/new" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
+            <Route path="/rooms/advisor" element={<ProtectedRoute><RoomAdvisor /></ProtectedRoute>} />
+            <Route path="/rooms/:id" element={<ProtectedRoute><RoomBuilder /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
             <Route path="/sessions/new" element={<ProtectedRoute><NewSession /></ProtectedRoute>} />

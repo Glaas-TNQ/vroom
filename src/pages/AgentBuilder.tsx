@@ -333,9 +333,37 @@ export default function AgentBuilder() {
                 </Button>
               )}
               {isSystemAgent && (
-                <p className="text-sm text-muted-foreground text-center">
-                  System agents are read-only and cannot be modified
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground text-center">
+                    System agents are read-only and cannot be modified
+                  </p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={async () => {
+                      const { error } = await supabase.from('agents').insert({
+                        user_id: user!.id,
+                        name: `${formData.name} (Copy)`,
+                        description: formData.description || null,
+                        icon: formData.icon,
+                        color: formData.color,
+                        system_prompt: formData.system_prompt,
+                        provider_profile_id: formData.provider_profile_id || null,
+                        temperature: formData.temperature,
+                        max_tokens: formData.max_tokens,
+                      });
+                      if (error) {
+                        toast({ title: 'Failed to duplicate', description: error.message, variant: 'destructive' });
+                      } else {
+                        toast({ title: 'Agent duplicated' });
+                        navigate('/agents');
+                      }
+                    }}
+                  >
+                    Duplicate as Custom Agent
+                  </Button>
+                </div>
               )}
             </form>
           </CardContent>

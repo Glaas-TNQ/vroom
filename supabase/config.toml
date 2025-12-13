@@ -1,1 +1,10 @@
 project_id = "ekldpltbhmndookkwhmr"
+
+[functions.run-session]
+verify_jwt = true
+
+[functions.room-advisor]
+verify_jwt = true
+
+[functions.test-provider]
+verify_jwt = true
