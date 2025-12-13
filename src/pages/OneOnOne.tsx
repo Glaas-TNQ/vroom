@@ -13,6 +13,7 @@ import { Markdown } from '@/components/ui/markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAgents, Agent } from '@/hooks/useAgents';
 import { Send, Loader2, Bot, User, Plus, History, Trash2, Settings2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -23,20 +24,6 @@ interface Message {
   agentId?: string;
   agentName?: string;
   agentColor?: string;
-}
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  color: string;
-  system_prompt: string;
-  temperature: number;
-  max_tokens: number;
-  unlimited_tokens: boolean;
-  is_system: boolean;
-  provider_profile_id: string | null;
 }
 
 interface ProviderProfile {
@@ -79,20 +66,8 @@ export default function OneOnOne() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch agents
-  const { data: agents } = useQuery({
-    queryKey: ['agents-for-chat'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .or(`is_system.eq.true,user_id.eq.${user?.id}`)
-        .order('name');
-      if (error) throw error;
-      return data as Agent[];
-    },
-    enabled: !!user,
-  });
+  // Fetch agents with proper personalization handling
+  const { data: agents } = useAgents();
 
   // Fetch provider profiles
   const { data: providers } = useQuery({

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -8,37 +8,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Bot, Plus, Trash2 } from 'lucide-react';
 import { ICON_MAP } from '@/components/AgentIconPicker';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  color: string;
-  avatar_url: string | null;
-  system_prompt: string;
-  is_system: boolean;
-  temperature: number;
-  max_tokens: number;
-}
+import { useAgents, Agent } from '@/hooks/useAgents';
 
 export default function Agents() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: agents, isLoading } = useQuery({
-    queryKey: ['agents'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .order('is_system', { ascending: false })
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as Agent[];
-    },
-  });
+  const { data: agents, isLoading } = useAgents();
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
