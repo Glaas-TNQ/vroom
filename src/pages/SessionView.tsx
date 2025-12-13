@@ -225,8 +225,9 @@ export default function SessionView() {
 
   return (
     <AppLayout title={t('sessions.view')}>
-      <div className="flex flex-col h-full" style={{ height: 'calc(100vh - 120px)' }}>
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-4">
+        {/* Top Bar - always visible */}
+        <div className="flex items-center justify-between sticky top-0 bg-background z-10 py-2">
           <Button variant="ghost" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('sessionView.backToSessions')}
@@ -274,39 +275,40 @@ export default function SessionView() {
           </div>
         </div>
 
-        <div className="flex-1 flex rounded-lg border overflow-hidden min-h-0">
+        {/* Session Header - scrolls with page */}
+        <div className="p-6 rounded-lg border bg-card">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-2xl font-semibold">{session.topic}</h2>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(session.status)}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="ml-2"
+              >
+                {sidebarOpen ? (
+                  <PanelRightClose className="h-4 w-4" />
+                ) : (
+                  <PanelRight className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+          {session.objective && (
+            <p className="text-muted-foreground leading-relaxed">{session.objective}</p>
+          )}
+          <div className="flex gap-4 text-sm text-muted-foreground mt-3">
+            <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
+            <span>•</span>
+            <span>{session.agent_config.length} {t('sessions.agents')}</span>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex rounded-lg border overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: '400px' }}>
           {/* Main Content */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            {/* Session Header */}
-            <div className="p-6 border-b bg-card">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-2xl font-semibold">{session.topic}</h2>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(session.status)}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="ml-2"
-                  >
-                    {sidebarOpen ? (
-                      <PanelRightClose className="h-4 w-4" />
-                    ) : (
-                      <PanelRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              {session.objective && (
-                <p className="text-muted-foreground leading-relaxed">{session.objective}</p>
-              )}
-              <div className="flex gap-4 text-sm text-muted-foreground mt-3">
-                <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
-                <span>•</span>
-                <span>{session.agent_config.length} {t('sessions.agents')}</span>
-              </div>
-            </div>
-
             {/* Tabs for Report/Transcript */}
             {session.status === 'completed' && hasFinalReport ? (
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'transcript')} className="flex-1 flex flex-col overflow-hidden">
