@@ -27,6 +27,7 @@ export type Database = {
           provider_profile_id: string | null
           system_prompt: string
           temperature: number
+          unlimited_tokens: boolean | null
           updated_at: string
           user_id: string | null
         }
@@ -42,6 +43,7 @@ export type Database = {
           provider_profile_id?: string | null
           system_prompt: string
           temperature?: number
+          unlimited_tokens?: boolean | null
           updated_at?: string
           user_id?: string | null
         }
@@ -57,6 +59,7 @@ export type Database = {
           provider_profile_id?: string | null
           system_prompt?: string
           temperature?: number
+          unlimited_tokens?: boolean | null
           updated_at?: string
           user_id?: string | null
         }

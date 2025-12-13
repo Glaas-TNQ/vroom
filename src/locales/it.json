@@ -30,6 +30,7 @@
     "dashboard": "Dashboard",
     "agents": "Agenti",
     "rooms": "Stanze",
+    "oneOnOne": "1 on 1",
     "sessions": "Sessioni",
     "settings": "Impostazioni",
     "newSession": "Nuova Sessione"
@@ -102,7 +103,20 @@
     "designing": "Atlas sta progettando il tuo agente...",
     "design": "Progetta Agente",
     "applyDesign": "Applica Questo Design",
-    "atlasPlaceholder": "Esempio: Ho bisogno di un agente che analizzi contratti legali e identifichi potenziali rischi, problemi di conformità e clausole sfavorevoli. Deve essere accurato ma anche pratico nel suggerire alternative."
+    "atlasPlaceholder": "Esempio: Ho bisogno di un agente che analizzi contratti legali e identifichi potenziali rischi, problemi di conformità e clausole sfavorevoli. Deve essere accurato ma anche pratico nel suggerire alternative.",
+    "unlimitedTokens": "Token Illimitati",
+    "unlimitedTokensHint": "Rimuovi il limite di token - l'agente può usarne quanti preferisce"
+  },
+  "oneOnOne": {
+    "title": "Chat 1 on 1",
+    "selectAgent": "Seleziona un agente",
+    "selectAgentPrompt": "Seleziona un agente per iniziare a chattare",
+    "selectAgentFirst": "Seleziona prima un agente",
+    "startChat": "Inizia una conversazione con questo agente",
+    "placeholder": "Scrivi il tuo messaggio...",
+    "thinking": "Sto pensando...",
+    "newSession": "Nuova Sessione",
+    "error": "Si è verificato un errore. Riprova."
   },
   "rooms": {
     "title": "Stanze",
