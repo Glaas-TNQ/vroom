@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,24 +17,14 @@ interface Message {
 }
 
 export default function RoomAdvisor() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Ciao! Sono il Room Advisor, il tuo consulente AI per la configurazione delle deliberazioni.
-
-Raccontami cosa vuoi ottenere dalla tua prossima sessione di lavoro e ti consiglierò:
-- La **metodologia** più adatta (McKinsey, OKR, Brainstorming, Lean, Ensemble)
-- Il **flusso di lavoro** ideale (ciclico, sequenziale, parallelo)
-- Gli **agenti** più indicati per il tuo obiettivo
-- Il numero di **round** consigliato
-
-Ad esempio, puoi dirmi:
-- "Devo valutare se investire in una nuova linea di prodotto"
-- "Voglio generare idee per una campagna marketing innovativa"
-- "Devo decidere se acquisire una startup competitor"`,
+      content: t('roomAdvisor.welcome'),
     },
   ]);
   const [input, setInput] = useState('');
@@ -61,8 +52,8 @@ Ad esempio, puoi dirmi:
     } catch (error) {
       console.error('Room Advisor error:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile contattare il Room Advisor',
+        title: t('common.error'),
+        description: t('roomAdvisor.error'),
         variant: 'destructive',
       });
     } finally {
@@ -78,11 +69,11 @@ Ad esempio, puoi dirmi:
   };
 
   return (
-    <AppLayout title="Room Advisor">
+    <AppLayout title={t('roomAdvisor.title')}>
       <div className="max-w-3xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
         <Button variant="ghost" onClick={() => navigate('/rooms')} className="mb-4 self-start">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna alle Rooms
+          {t('roomAdvisor.backToRooms')}
         </Button>
 
         <Card className="flex-1 flex flex-col overflow-hidden">
@@ -91,11 +82,9 @@ Ad esempio, puoi dirmi:
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              Room Advisor AI
+              {t('roomAdvisor.title')} AI
             </CardTitle>
-            <CardDescription>
-              Descrivi il tuo obiettivo e ricevi consigli personalizzati sulla configurazione della room
-            </CardDescription>
+            <CardDescription>{t('roomAdvisor.subtitle')}</CardDescription>
           </CardHeader>
 
           <ScrollArea className="flex-1 p-4">
@@ -146,7 +135,7 @@ Ad esempio, puoi dirmi:
           <CardContent className="border-t p-4">
             <div className="flex gap-2">
               <Textarea
-                placeholder="Descrivi cosa vuoi ottenere..."
+                placeholder={t('roomAdvisor.placeholder')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}

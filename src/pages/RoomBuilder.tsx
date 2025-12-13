@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,57 +26,25 @@ interface Agent {
 }
 
 const METHODOLOGIES = [
-  {
-    value: 'analytical_structured',
-    label: 'Analisi Strategica McKinsey',
-    description: 'Approccio analitico-strutturato con scomposizione MECE del problema e sintesi gerarchica (Pyramid Principle). Ideale per problem solving complessi e due diligence.',
-    icon: '📊',
-  },
-  {
-    value: 'strategic_executive',
-    label: 'Pianificazione OKR/BSC',
-    description: 'Balanced Scorecard per valutare decisioni su prospettive multiple: finanziaria, clienti, processi interni, crescita. Ideale per pianificazione strategica.',
-    icon: '🎯',
-  },
-  {
-    value: 'creative_brainstorming',
-    label: 'Brainstorming Creativo',
-    description: 'Design Thinking con ruoli di pensiero diversi. Generazione idee divergenti, poi convergenza. Ideale per innovazione e ideazione.',
-    icon: '💡',
-  },
-  {
-    value: 'lean_iterative',
-    label: 'Validazione Lean Startup',
-    description: 'Ciclo Build-Measure-Learn per testare ipotesi rapidamente. Ideale per validazione idee, MVP e decisioni di pivot.',
-    icon: '🚀',
-  },
-  {
-    value: 'parallel_ensemble',
-    label: 'Analisi Multi-Prospettiva',
-    description: 'Analisi parallele indipendenti da specialisti diversi, poi sintesi finale. Ideale per decisioni critiche e multi-perspective analysis.',
-    icon: '🔀',
-  },
+  'analytical_structured',
+  'strategic_executive',
+  'creative_brainstorming',
+  'lean_iterative',
+  'parallel_ensemble',
 ];
 
-const WORKFLOWS = [
-  {
-    value: 'cyclic',
-    label: 'Ciclico',
-    description: 'Gli agenti si alternano in round successivi, costruendo sulla discussione precedente.',
-  },
-  {
-    value: 'sequential_pipeline',
-    label: 'Sequenziale (Pipeline)',
-    description: 'Ogni agente elabora e passa al successivo, come in un processo a fasi.',
-  },
-  {
-    value: 'concurrent',
-    label: 'Parallelo',
-    description: 'Tutti gli agenti rispondono simultaneamente, poi i risultati vengono aggregati.',
-  },
-];
+const METHODOLOGY_ICONS: Record<string, string> = {
+  analytical_structured: '📊',
+  strategic_executive: '🎯',
+  creative_brainstorming: '💡',
+  lean_iterative: '🚀',
+  parallel_ensemble: '🔀',
+};
+
+const WORKFLOWS = ['cyclic', 'sequential_pipeline', 'concurrent'];
 
 export default function RoomBuilder() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -118,15 +87,12 @@ export default function RoomBuilder() {
   const { data: providerProfiles } = useQuery({
     queryKey: ['provider-profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('provider_profiles')
-        .select('id, name, provider_type');
+      const { data, error } = await supabase.from('provider_profiles').select('id, name, provider_type');
       if (error) throw error;
       return data;
     },
   });
 
-  // Check if user has Perplexity or Tavily configured
   const hasPerplexity = providerProfiles?.some(p => p.provider_type === 'perplexity');
   const hasTavily = providerProfiles?.some(p => p.provider_type === 'tavily');
 
@@ -151,7 +117,7 @@ export default function RoomBuilder() {
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (isSystemRoom) {
-        throw new Error('Le room di sistema non possono essere modificate');
+        throw new Error(t('rooms.systemRoomReadOnly'));
       }
 
       const payload = {
@@ -177,11 +143,11 @@ export default function RoomBuilder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      toast({ title: isEditing ? 'Room aggiornata' : 'Room creata' });
+      toast({ title: t('common.success') });
       navigate('/rooms');
     },
     onError: (error: Error) => {
-      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     },
   });
 
@@ -219,34 +185,32 @@ export default function RoomBuilder() {
 
   if (roomLoading) {
     return (
-      <AppLayout title="Room Builder">
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+      <AppLayout title={t('rooms.builder')}>
+        <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout title={isEditing ? 'Modifica Room' : 'Crea Room'}>
+    <AppLayout title={isEditing ? t('rooms.edit') : t('rooms.create')}>
       <div className="max-w-3xl">
         <Button variant="ghost" onClick={() => navigate('/rooms')} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Torna alle Rooms
+          {t('rooms.backToRooms')}
         </Button>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Informazioni Base</CardTitle>
-              <CardDescription>Nome e descrizione della room</CardDescription>
+              <CardTitle>{t('rooms.basicInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome Room</Label>
+                  <Label htmlFor="name">{t('rooms.roomName')}</Label>
                   <Input
                     id="name"
-                    placeholder="es. Analisi Investimento Q4"
+                    placeholder="e.g., Q4 Investment Analysis"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
@@ -254,7 +218,7 @@ export default function RoomBuilder() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="max_rounds">Numero Round</Label>
+                  <Label htmlFor="max_rounds">{t('rooms.numRounds')}</Label>
                   <Select 
                     value={formData.max_rounds.toString()} 
                     onValueChange={(v) => setFormData({ ...formData, max_rounds: parseInt(v) })}
@@ -265,19 +229,17 @@ export default function RoomBuilder() {
                     </SelectTrigger>
                     <SelectContent>
                       {[3, 4, 5, 6, 7, 8, 10].map((n) => (
-                        <SelectItem key={n} value={n.toString()}>
-                          {n} rounds
-                        </SelectItem>
+                        <SelectItem key={n} value={n.toString()}>{n} rounds</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descrizione</Label>
+                <Label htmlFor="description">{t('agents.description')}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Descrivi lo scopo di questa room..."
+                  placeholder="Describe the purpose of this room..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
@@ -287,11 +249,10 @@ export default function RoomBuilder() {
             </CardContent>
           </Card>
 
-          {/* Methodology */}
           <Card>
             <CardHeader>
-              <CardTitle>Metodologia</CardTitle>
-              <CardDescription>Scegli l'approccio di lavoro per questa room</CardDescription>
+              <CardTitle>{t('rooms.methodology')}</CardTitle>
+              <CardDescription>{t('rooms.methodologyDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <RadioGroup
@@ -302,21 +263,19 @@ export default function RoomBuilder() {
               >
                 {METHODOLOGIES.map((m) => (
                   <label
-                    key={m.value}
+                    key={m}
                     className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
-                      formData.methodology === m.value
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-accent'
+                      formData.methodology === m ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                     } ${isSystemRoom ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
-                    <RadioGroupItem value={m.value} className="mt-1" disabled={isSystemRoom} />
+                    <RadioGroupItem value={m} className="mt-1" disabled={isSystemRoom} />
                     <div className="flex-1">
                       <div className="font-medium flex items-center gap-2">
-                        <span className="text-xl">{m.icon}</span>
-                        {m.label}
+                        <span className="text-xl">{METHODOLOGY_ICONS[m]}</span>
+                        {t(`methodologies.${m}.label`)}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        {m.description}
+                        {t(`methodologies.${m}.description`)}
                       </div>
                     </div>
                   </label>
@@ -325,11 +284,10 @@ export default function RoomBuilder() {
             </CardContent>
           </Card>
 
-          {/* Workflow */}
           <Card>
             <CardHeader>
-              <CardTitle>Flusso di Lavoro</CardTitle>
-              <CardDescription>Come interagiscono gli agenti</CardDescription>
+              <CardTitle>{t('rooms.workflow')}</CardTitle>
+              <CardDescription>{t('rooms.workflowDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <RadioGroup
@@ -340,18 +298,16 @@ export default function RoomBuilder() {
               >
                 {WORKFLOWS.map((w) => (
                   <label
-                    key={w.value}
+                    key={w}
                     className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
-                      formData.workflow_type === w.value
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-accent'
+                      formData.workflow_type === w ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                     } ${isSystemRoom ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
-                    <RadioGroupItem value={w.value} className="mt-1" disabled={isSystemRoom} />
+                    <RadioGroupItem value={w} className="mt-1" disabled={isSystemRoom} />
                     <div className="flex-1">
-                      <div className="font-medium">{w.label}</div>
+                      <div className="font-medium">{t(`workflows.${w}.label`)}</div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        {w.description}
+                        {t(`workflows.${w}.description`)}
                       </div>
                     </div>
                   </label>
@@ -360,11 +316,10 @@ export default function RoomBuilder() {
             </CardContent>
           </Card>
 
-          {/* Agents */}
           <Card>
             <CardHeader>
-              <CardTitle>Agenti Predefiniti</CardTitle>
-              <CardDescription>Seleziona gli agenti che parteciperanno alle sessioni in questa room (opzionale)</CardDescription>
+              <CardTitle>{t('rooms.defaultAgents')}</CardTitle>
+              <CardDescription>{t('rooms.defaultAgentsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               {agents && agents.length > 0 ? (
@@ -373,9 +328,7 @@ export default function RoomBuilder() {
                     <label
                       key={agent.id}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        formData.agent_ids.includes(agent.id)
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-accent'
+                        formData.agent_ids.includes(agent.id) ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                       } ${isSystemRoom ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       <Checkbox
@@ -392,7 +345,7 @@ export default function RoomBuilder() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{agent.name}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {agent.description || 'Nessuna descrizione'}
+                          {agent.description || 'No description'}
                         </div>
                       </div>
                     </label>
@@ -400,25 +353,22 @@ export default function RoomBuilder() {
                 </div>
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
-                  Nessun agente disponibile
+                  {t('rooms.noAgentsAvailable')}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Tools */}
           {(hasPerplexity || hasTavily) && (
             <Card>
               <CardHeader>
-                <CardTitle>Strumenti Disponibili</CardTitle>
-                <CardDescription>Abilita strumenti di ricerca per gli agenti</CardDescription>
+                <CardTitle>{t('rooms.availableTools')}</CardTitle>
+                <CardDescription>{t('rooms.availableToolsDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {hasPerplexity && (
                   <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    formData.available_tools.includes('perplexity')
-                      ? 'border-primary bg-primary/5'
-                      : 'hover:bg-accent'
+                    formData.available_tools.includes('perplexity') ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                   }`}>
                     <Checkbox
                       checked={formData.available_tools.includes('perplexity')}
@@ -426,18 +376,14 @@ export default function RoomBuilder() {
                       disabled={isSystemRoom}
                     />
                     <div>
-                      <div className="font-medium">Perplexity (Deep Research)</div>
-                      <div className="text-sm text-muted-foreground">
-                        Ricerca web approfondita con citazioni
-                      </div>
+                      <div className="font-medium">{t('rooms.perplexityDeepResearch')}</div>
+                      <div className="text-sm text-muted-foreground">{t('rooms.perplexityDesc')}</div>
                     </div>
                   </label>
                 )}
                 {hasTavily && (
                   <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    formData.available_tools.includes('tavily')
-                      ? 'border-primary bg-primary/5'
-                      : 'hover:bg-accent'
+                    formData.available_tools.includes('tavily') ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                   }`}>
                     <Checkbox
                       checked={formData.available_tools.includes('tavily')}
@@ -445,10 +391,8 @@ export default function RoomBuilder() {
                       disabled={isSystemRoom}
                     />
                     <div>
-                      <div className="font-medium">Tavily (Quick Search)</div>
-                      <div className="text-sm text-muted-foreground">
-                        Ricerca web veloce per fatti e news
-                      </div>
+                      <div className="font-medium">{t('rooms.tavilyQuickSearch')}</div>
+                      <div className="text-sm text-muted-foreground">{t('rooms.tavilyDesc')}</div>
                     </div>
                   </label>
                 )}
@@ -456,17 +400,14 @@ export default function RoomBuilder() {
             </Card>
           )}
 
-          {/* Objective Template */}
           <Card>
             <CardHeader>
-              <CardTitle>Template Obiettivo</CardTitle>
-              <CardDescription>
-                Definisci un template per l'obiettivo delle sessioni. Usa {'{topic}'} come placeholder.
-              </CardDescription>
+              <CardTitle>{t('rooms.objectiveTemplate')}</CardTitle>
+              <CardDescription>{t('rooms.objectiveTemplateDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
-                placeholder="es. Analizzare {topic} considerando implicazioni finanziarie, legali e strategiche..."
+                placeholder="e.g., Analyze {topic} considering financial, legal, and strategic implications..."
                 value={formData.objective_template}
                 onChange={(e) => setFormData({ ...formData, objective_template: e.target.value })}
                 rows={3}
@@ -478,13 +419,13 @@ export default function RoomBuilder() {
           {!isSystemRoom && (
             <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
               <Save className="h-4 w-4 mr-2" />
-              {saveMutation.isPending ? 'Salvataggio...' : isEditing ? 'Aggiorna Room' : 'Crea Room'}
+              {saveMutation.isPending ? t('common.loading') : t('common.save')}
             </Button>
           )}
           {isSystemRoom && (
             <div className="flex items-center gap-2 p-4 rounded-lg bg-muted text-muted-foreground">
               <Info className="h-5 w-5" />
-              <span>Le room di sistema sono in sola lettura. Puoi usarle come base per creare le tue.</span>
+              <span>{t('rooms.systemRoomReadOnly')}</span>
             </div>
           )}
         </form>

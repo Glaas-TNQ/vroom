@@ -1,0 +1,192 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "noResults": "No results found",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "agents": "Agents",
+    "rooms": "Rooms",
+    "sessions": "Sessions",
+    "settings": "Settings",
+    "newSession": "New Session"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "agents": {
+    "title": "Agents",
+    "create": "Create Agent",
+    "edit": "Edit Agent",
+    "builder": "Agent Builder",
+    "backToAgents": "Back to Agents",
+    "name": "Agent Name",
+    "description": "Description",
+    "type": "Agent Type",
+    "color": "Color",
+    "apiProvider": "API Provider",
+    "apiProviderDefault": "Use Lovable AI (default)",
+    "apiProviderHint": "Leave empty to use Lovable AI, or select your own provider",
+    "systemPrompt": "System Prompt",
+    "temperature": "Temperature",
+    "temperatureHint": "Lower = more focused, Higher = more creative",
+    "maxTokens": "Max Tokens",
+    "systemAgent": "System Agent",
+    "customAgent": "Custom Agent",
+    "systemAgentReadOnly": "System agents are read-only and cannot be modified",
+    "duplicate": "Duplicate as Custom Agent",
+    "duplicated": "Agent duplicated",
+    "noAgents": "No agents created yet",
+    "createFirst": "Create your first agent"
+  },
+  "rooms": {
+    "title": "Rooms",
+    "create": "New Room",
+    "edit": "Edit Room",
+    "builder": "Room Builder",
+    "backToRooms": "Back to Rooms",
+    "description": "Rooms define the interaction rules for deliberation sessions",
+    "advisor": "Room Advisor",
+    "systemRooms": "Pre-configured Methodologies",
+    "myRooms": "My Rooms",
+    "noCustomRooms": "You haven't created any custom rooms yet.",
+    "createFirst": "Create your first room",
+    "startSession": "Start Session",
+    "system": "System",
+    "basicInfo": "Basic Info",
+    "roomName": "Room Name",
+    "numRounds": "Number of Rounds",
+    "methodology": "Methodology",
+    "methodologyDesc": "Choose the working approach for this room",
+    "workflow": "Workflow",
+    "workflowDesc": "How agents interact with each other",
+    "defaultAgents": "Default Agents",
+    "defaultAgentsDesc": "Select agents that will participate in sessions in this room (optional)",
+    "noAgentsAvailable": "No agents available",
+    "availableTools": "Available Tools",
+    "availableToolsDesc": "Enable research tools for agents",
+    "perplexityDeepResearch": "Perplexity (Deep Research)",
+    "perplexityDesc": "In-depth web research with citations",
+    "tavilyQuickSearch": "Tavily (Quick Search)",
+    "tavilyDesc": "Fast web search for facts and news",
+    "objectiveTemplate": "Objective Template",
+    "objectiveTemplateDesc": "Define a template for session objectives. Use {topic} as a placeholder.",
+    "systemRoomReadOnly": "System rooms are read-only. You can use them as a base to create your own."
+  },
+  "methodologies": {
+    "analytical_structured": {
+      "label": "McKinsey Strategic Analysis",
+      "description": "Structured analytical approach with MECE decomposition and Pyramid Principle. Ideal for complex problem-solving and due diligence."
+    },
+    "strategic_executive": {
+      "label": "OKR/BSC Planning",
+      "description": "Balanced Scorecard for evaluating decisions across multiple perspectives: financial, customers, internal processes, growth. Ideal for strategic planning."
+    },
+    "creative_brainstorming": {
+      "label": "Creative Brainstorming",
+      "description": "Design Thinking with different thinking roles. Divergent idea generation, then convergence. Ideal for innovation and ideation."
+    },
+    "lean_iterative": {
+      "label": "Lean Startup Validation",
+      "description": "Build-Measure-Learn cycle for rapidly testing hypotheses. Ideal for idea validation, MVP, and pivot decisions."
+    },
+    "parallel_ensemble": {
+      "label": "Multi-Perspective Analysis",
+      "description": "Independent parallel analyses from different specialists, then final synthesis. Ideal for critical decisions and multi-perspective analysis."
+    },
+    "group_chat": {
+      "label": "Group Chat",
+      "description": "Open discussion format without specific methodology."
+    }
+  },
+  "workflows": {
+    "cyclic": {
+      "label": "Cyclic",
+      "description": "Agents take turns in successive rounds, building on the previous discussion."
+    },
+    "sequential_pipeline": {
+      "label": "Sequential (Pipeline)",
+      "description": "Each agent processes and passes to the next, like a phased process."
+    },
+    "concurrent": {
+      "label": "Parallel",
+      "description": "All agents respond simultaneously, then results are aggregated."
+    }
+  },
+  "sessions": {
+    "title": "Sessions",
+    "create": "New Session",
+    "view": "View Session",
+    "start": "Start",
+    "noSessions": "No sessions yet",
+    "createFirst": "Create your first session to start deliberating",
+    "status": {
+      "draft": "Draft",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "newSession": {
+    "title": "New Session",
+    "backToSessions": "Back to Sessions",
+    "chooseRoom": "Choose a Room",
+    "chooseRoomDesc": "Select a room with a pre-configured methodology or create a custom session",
+    "dontKnow": "Not sure which to choose?",
+    "askAdvisor": "Ask the Room Advisor AI for the ideal configuration",
+    "preConfigured": "Pre-configured Methodologies",
+    "myRooms": "My Rooms",
+    "createCustom": "Create Custom Session",
+    "defineTopic": "Define Your Topic",
+    "topicQuestion": "Topic / Question",
+    "topicPlaceholder": "e.g., Should we expand into the European market?",
+    "objective": "Objective (optional)",
+    "objectivePlaceholder": "What specific outcome are you looking for?",
+    "numRounds": "Number of Rounds",
+    "nextSelectAgents": "Next: Select Agents",
+    "selectAgents": "Select Agents",
+    "selectAgentsDesc": "Choose at least 2 agents to participate in the deliberation",
+    "preSelectedFromRoom": "pre-selected from room",
+    "noAgents": "No agents available.",
+    "createFirstAgent": "Create your first agent",
+    "createSession": "Create Session",
+    "creating": "Creating...",
+    "sessionCreated": "Session created",
+    "errorCreating": "Error creating session"
+  },
+  "roomAdvisor": {
+    "title": "Room Advisor",
+    "backToRooms": "Back to Rooms",
+    "subtitle": "Describe your goal and receive personalized advice on room configuration",
+    "placeholder": "Describe what you want to achieve...",
+    "welcome": "Hi! I'm the Room Advisor, your AI consultant for configuring deliberations.\n\nTell me what you want to achieve in your next work session and I'll recommend:\n- The most suitable **methodology** (McKinsey, OKR, Brainstorming, Lean, Ensemble)\n- The ideal **workflow** (cyclic, sequential, parallel)\n- The most appropriate **agents** for your goal\n- The recommended number of **rounds**\n\nFor example, you can tell me:\n- \"I need to evaluate whether to invest in a new product line\"\n- \"I want to generate ideas for an innovative marketing campaign\"\n- \"I need to decide whether to acquire a competitor startup\"",
+    "error": "Unable to contact the Room Advisor"
+  },
+  "settings": {
+    "title": "Settings",
+    "providers": "API Providers",
+    "addProvider": "Add Provider",
+    "testConnection": "Test Connection"
+  }
+}

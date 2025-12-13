@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,15 +35,6 @@ interface Room {
   is_system: boolean;
 }
 
-const METHODOLOGY_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  analytical_structured: { label: 'McKinsey', color: 'bg-blue-500/10 text-blue-500', icon: '📊' },
-  strategic_executive: { label: 'OKR/BSC', color: 'bg-purple-500/10 text-purple-500', icon: '🎯' },
-  creative_brainstorming: { label: 'Brainstorming', color: 'bg-yellow-500/10 text-yellow-500', icon: '💡' },
-  lean_iterative: { label: 'Lean', color: 'bg-green-500/10 text-green-500', icon: '🚀' },
-  parallel_ensemble: { label: 'Ensemble', color: 'bg-orange-500/10 text-orange-500', icon: '🔀' },
-  group_chat: { label: 'Group Chat', color: 'bg-muted text-muted-foreground', icon: '💬' },
-};
-
 const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
   sequential_pipeline: <span>→</span>,
   cyclic: <RotateCcw className="h-3 w-3" />,
@@ -50,6 +42,7 @@ const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function NewSession() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedRoomId = searchParams.get('roomId');
@@ -64,6 +57,34 @@ export default function NewSession() {
     selectedAgentIds: [] as string[],
     maxRounds: 5,
   });
+
+  const getMethodologyLabel = (methodology: string) => {
+    return t(`methodologies.${methodology}.label`, { defaultValue: methodology });
+  };
+
+  const getMethodologyIcon = (methodology: string): string => {
+    const icons: Record<string, string> = {
+      analytical_structured: '📊',
+      strategic_executive: '🎯',
+      creative_brainstorming: '💡',
+      lean_iterative: '🚀',
+      parallel_ensemble: '🔀',
+      group_chat: '💬',
+    };
+    return icons[methodology] || '💬';
+  };
+
+  const getMethodologyColor = (methodology: string): string => {
+    const colors: Record<string, string> = {
+      analytical_structured: 'bg-blue-500/10 text-blue-500',
+      strategic_executive: 'bg-purple-500/10 text-purple-500',
+      creative_brainstorming: 'bg-yellow-500/10 text-yellow-500',
+      lean_iterative: 'bg-green-500/10 text-green-500',
+      parallel_ensemble: 'bg-orange-500/10 text-orange-500',
+      group_chat: 'bg-muted text-muted-foreground',
+    };
+    return colors[methodology] || 'bg-muted text-muted-foreground';
+  };
 
   const { data: rooms } = useQuery({
     queryKey: ['rooms'],
@@ -87,7 +108,6 @@ export default function NewSession() {
     },
   });
 
-  // Pre-select room if coming from rooms page
   useEffect(() => {
     if (preselectedRoomId && rooms) {
       const room = rooms.find(r => r.id === preselectedRoomId);
@@ -145,11 +165,11 @@ export default function NewSession() {
       return data;
     },
     onSuccess: (data) => {
-      toast({ title: 'Sessione creata' });
+      toast({ title: t('newSession.sessionCreated') });
       navigate(`/sessions/${data.id}`);
     },
     onError: (error: Error) => {
-      toast({ title: 'Errore nella creazione', description: error.message, variant: 'destructive' });
+      toast({ title: t('newSession.errorCreating'), description: error.message, variant: 'destructive' });
     },
   });
 
@@ -179,11 +199,11 @@ export default function NewSession() {
   const userRooms = rooms?.filter(r => !r.is_system) || [];
 
   return (
-    <AppLayout title="Nuova Sessione">
+    <AppLayout title={t('newSession.title')}>
       <div className="max-w-2xl">
         <Button variant="ghost" onClick={() => step === 0 ? navigate('/sessions') : setStep(step - 1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {step === 0 ? 'Torna alle Sessioni' : 'Indietro'}
+          {step === 0 ? t('newSession.backToSessions') : t('common.back')}
         </Button>
 
         <div className="flex gap-2 mb-6">
@@ -195,13 +215,10 @@ export default function NewSession() {
         {step === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Scegli una Room</CardTitle>
-              <CardDescription>
-                Seleziona una room con metodologia pre-configurata o crea una sessione personalizzata
-              </CardDescription>
+              <CardTitle>{t('newSession.chooseRoom')}</CardTitle>
+              <CardDescription>{t('newSession.chooseRoomDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Room Advisor CTA */}
               <button
                 onClick={() => navigate('/rooms/advisor')}
                 className="w-full flex items-center gap-4 p-4 rounded-lg border border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
@@ -210,91 +227,79 @@ export default function NewSession() {
                   <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-primary">Non sai quale scegliere?</div>
-                  <div className="text-sm text-muted-foreground">
-                    Chiedi al Room Advisor AI di consigliarti la configurazione ideale
-                  </div>
+                  <div className="font-medium text-primary">{t('newSession.dontKnow')}</div>
+                  <div className="text-sm text-muted-foreground">{t('newSession.askAdvisor')}</div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-primary" />
               </button>
 
-              {/* System Rooms */}
               {systemRooms.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Metodologie Pre-configurate</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">{t('newSession.preConfigured')}</h3>
                   <div className="grid gap-3">
-                    {systemRooms.map((room) => {
-                      const methodology = METHODOLOGY_LABELS[room.methodology] || METHODOLOGY_LABELS.group_chat;
-                      return (
-                        <button
-                          key={room.id}
-                          onClick={() => selectRoom(room)}
-                          className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-xl">
-                            {methodology.icon}
+                    {systemRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        onClick={() => selectRoom(room)}
+                        className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-xl">
+                          {getMethodologyIcon(room.methodology)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{room.name}</div>
+                          <div className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                            {room.description}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium flex items-center gap-2">
-                              {room.name}
-                            </div>
-                            <div className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                              {room.description}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              <Badge className={methodology.color} variant="secondary">
-                                {methodology.label}
-                              </Badge>
-                              <Badge variant="outline" className="flex items-center gap-1">
-                                {WORKFLOW_ICONS[room.workflow_type]}
-                                {room.max_rounds} rounds
-                              </Badge>
-                            </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge className={getMethodologyColor(room.methodology)} variant="secondary">
+                              {getMethodologyLabel(room.methodology)}
+                            </Badge>
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              {WORKFLOW_ICONS[room.workflow_type]}
+                              {room.max_rounds} rounds
+                            </Badge>
                           </div>
-                        </button>
-                      );
-                    })}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* User Rooms */}
               {userRooms.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Le Mie Rooms</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">{t('newSession.myRooms')}</h3>
                   <div className="grid gap-3">
-                    {userRooms.map((room) => {
-                      const methodology = METHODOLOGY_LABELS[room.methodology] || METHODOLOGY_LABELS.group_chat;
-                      return (
-                        <button
-                          key={room.id}
-                          onClick={() => selectRoom(room)}
-                          className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <LayoutGrid className="h-5 w-5 text-primary" />
+                    {userRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        onClick={() => selectRoom(room)}
+                        className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent hover:border-primary/50 transition-colors"
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <LayoutGrid className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{room.name}</div>
+                          <div className="text-sm text-muted-foreground line-clamp-1">
+                            {room.description}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium">{room.name}</div>
-                            <div className="text-sm text-muted-foreground line-clamp-1">
-                              {room.description}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              <Badge className={methodology.color} variant="secondary">
-                                {methodology.label}
-                              </Badge>
-                            </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge className={getMethodologyColor(room.methodology)} variant="secondary">
+                              {getMethodologyLabel(room.methodology)}
+                            </Badge>
                           </div>
-                        </button>
-                      );
-                    })}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
               <div className="border-t pt-4">
                 <Button variant="outline" onClick={skipRoom} className="w-full">
-                  Crea Sessione Personalizzata
+                  {t('newSession.createCustom')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -305,18 +310,18 @@ export default function NewSession() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Definisci il Topic</CardTitle>
+              <CardTitle>{t('newSession.defineTopic')}</CardTitle>
               <CardDescription>
                 {selectedRoom 
                   ? `Room: ${selectedRoom.name}`
-                  : 'Quale decisione o argomento vuoi deliberare?'}
+                  : t('newSession.topicPlaceholder')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {selectedRoom && (
                 <div className="p-4 rounded-lg bg-muted/50 border mb-4">
                   <div className="font-medium mb-1 flex items-center gap-2">
-                    <span className="text-lg">{METHODOLOGY_LABELS[selectedRoom.methodology]?.icon}</span>
+                    <span className="text-lg">{getMethodologyIcon(selectedRoom.methodology)}</span>
                     {selectedRoom.name}
                   </div>
                   <div className="text-sm text-muted-foreground">{selectedRoom.description}</div>
@@ -324,10 +329,10 @@ export default function NewSession() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="topic">Topic / Domanda</Label>
+                <Label htmlFor="topic">{t('newSession.topicQuestion')}</Label>
                 <Input
                   id="topic"
-                  placeholder="es. Dovremmo espanderci nel mercato europeo?"
+                  placeholder={t('newSession.topicPlaceholder')}
                   value={formData.topic}
                   onChange={(e) => {
                     const newTopic = e.target.value;
@@ -341,10 +346,10 @@ export default function NewSession() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="objective">Obiettivo (opzionale)</Label>
+                <Label htmlFor="objective">{t('newSession.objective')}</Label>
                 <Textarea
                   id="objective"
-                  placeholder="Quale risultato specifico stai cercando?"
+                  placeholder={t('newSession.objectivePlaceholder')}
                   value={formData.objective}
                   onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
                   rows={3}
@@ -352,7 +357,7 @@ export default function NewSession() {
               </div>
 
               <div className="space-y-2">
-                <Label>Numero di Round</Label>
+                <Label>{t('newSession.numRounds')}</Label>
                 <div className="flex gap-2">
                   {[3, 5, 7].map((num) => (
                     <Button
@@ -373,7 +378,7 @@ export default function NewSession() {
                 onClick={() => setStep(2)}
                 disabled={!canProceed}
               >
-                Avanti: Seleziona Agenti
+                {t('newSession.nextSelectAgents')}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardContent>
@@ -383,10 +388,10 @@ export default function NewSession() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Seleziona Agenti</CardTitle>
+              <CardTitle>{t('newSession.selectAgents')}</CardTitle>
               <CardDescription>
-                Scegli almeno 2 agenti per partecipare alla deliberazione
-                {selectedRoom && selectedRoom.agent_ids.length > 0 && ` (pre-selezionati dalla room)`}
+                {t('newSession.selectAgentsDesc')}
+                {selectedRoom && selectedRoom.agent_ids.length > 0 && ` (${t('newSession.preSelectedFromRoom')})`}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -414,7 +419,7 @@ export default function NewSession() {
                       <div className="flex-1">
                         <div className="font-medium">{agent.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {agent.description || 'Nessuna descrizione'}
+                          {agent.description || t('agents.noAgents')}
                         </div>
                       </div>
                     </label>
@@ -422,9 +427,9 @@ export default function NewSession() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>Nessun agente disponibile.</p>
+                  <p>{t('newSession.noAgents')}</p>
                   <Button variant="link" onClick={() => navigate('/agents/new')}>
-                    Crea il tuo primo agente
+                    {t('newSession.createFirstAgent')}
                   </Button>
                 </div>
               )}
@@ -432,7 +437,7 @@ export default function NewSession() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Indietro
+                  {t('common.back')}
                 </Button>
                 <Button
                   onClick={() => createMutation.mutate()}
@@ -440,7 +445,7 @@ export default function NewSession() {
                   className="flex-1"
                 >
                   <Play className="h-4 w-4 mr-2" />
-                  {createMutation.isPending ? 'Creazione...' : 'Crea Sessione'}
+                  {createMutation.isPending ? t('newSession.creating') : t('newSession.createSession')}
                 </Button>
               </div>
             </CardContent>
