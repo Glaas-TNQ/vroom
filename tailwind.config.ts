@@ -60,6 +60,9 @@ export default {
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
+  			xl: 'var(--radius-card)',
+  			'2xl': 'var(--radius-modal)',
+  			'3xl': 'var(--radius-modal-lg)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
@@ -79,11 +82,26 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			shimmer: {
+  				'0%': { backgroundPosition: '-1000px 0' },
+  				'100%': { backgroundPosition: '1000px 0' }
+  			},
+  			fadeIn: {
+  				from: { opacity: '0', transform: 'translateY(10px)' },
+  				to: { opacity: '1', transform: 'translateY(0)' }
+  			},
+  			slideIn: {
+  				from: { opacity: '0', transform: 'translateX(20px)' },
+  				to: { opacity: '1', transform: 'translateX(0)' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'shimmer': 'shimmer 2s infinite linear',
+  			'fade-in': 'fadeIn 0.3s ease-out',
+  			'slide-in': 'slideIn 0.3s ease-out'
   		},
   		boxShadow: {
   			'2xs': 'var(--shadow-2xs)',
@@ -92,7 +110,27 @@ export default {
   			md: 'var(--shadow-md)',
   			lg: 'var(--shadow-lg)',
   			xl: 'var(--shadow-xl)',
-  			'2xl': 'var(--shadow-2xl)'
+  			'2xl': 'var(--shadow-2xl)',
+  			'glow-primary': 'var(--glow-primary)',
+  			'glow-accent': 'var(--glow-accent)'
+  		},
+  		fontSize: {
+  			'h1': 'var(--font-size-h1)',
+  			'h2': 'var(--font-size-h2)',
+  			'h3': 'var(--font-size-h3)',
+  			'body-lg': 'var(--font-size-body-lg)',
+  			'body': 'var(--font-size-body)',
+  			'label': 'var(--font-size-label)'
+  		},
+  		lineHeight: {
+  			'tight': 'var(--line-height-tight)',
+  			'base': 'var(--line-height-base)',
+  			'relaxed': 'var(--line-height-relaxed)'
+  		},
+  		letterSpacing: {
+  			'tight': 'var(--letter-spacing-tight)',
+  			'normal': 'var(--letter-spacing-normal)',
+  			'wide': 'var(--letter-spacing-wide)'
   		},
   		fontFamily: {
   			sans: [
@@ -128,6 +166,11 @@ export default {
   				'Courier New',
   				'monospace'
   			]
+  		},
+  		backgroundImage: {
+  			'gradient-primary': 'var(--gradient-primary)',
+  			'gradient-accent': 'var(--gradient-accent)',
+  			'gradient-subtle': 'var(--gradient-subtle)'
   		}
   	}
   },
