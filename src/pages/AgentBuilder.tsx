@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, Loader2, Check } from 'lucide-react';
 
 const ICONS = [
   { value: 'briefcase', label: '💼 CFO', emoji: '💼' },
@@ -78,6 +79,23 @@ interface ProviderProfile {
   provider_type: string;
 }
 
+interface AgentSpec {
+  name: string;
+  codename: string;
+  mandate: string;
+  primary_domain: string;
+  secondary_domains?: string[];
+  exclusions?: string[];
+  reasoning_mode: string;
+  depth_level: string;
+  decision_bias: string;
+  core_responsibilities: string[];
+  non_responsibilities?: string[];
+  system_prompt: string;
+  suggested_temperature: number;
+  suggested_icon: string;
+}
+
 export default function AgentBuilder() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -98,6 +116,11 @@ export default function AgentBuilder() {
     max_tokens: 2048,
   });
 
+  const [atlasOpen, setAtlasOpen] = useState(false);
+  const [atlasDescription, setAtlasDescription] = useState('');
+  const [atlasDesigning, setAtlasDesigning] = useState(false);
+  const [designedAgent, setDesignedAgent] = useState<AgentSpec | null>(null);
+
   const { data: agent, isLoading: agentLoading } = useQuery({
     queryKey: ['agent', id],
     queryFn: async () => {
@@ -107,6 +130,20 @@ export default function AgentBuilder() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: atlasAgent } = useQuery({
+    queryKey: ['atlas-agent'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('system_prompt')
+        .eq('name', 'Atlas')
+        .eq('is_system', true)
+        .single();
+      if (error) return null;
+      return data;
+    },
   });
 
   const { data: providers } = useQuery({
@@ -184,6 +221,55 @@ export default function AgentBuilder() {
     });
   };
 
+  const handleAtlasDesign = async () => {
+    if (!atlasDescription.trim() || !atlasAgent?.system_prompt) return;
+    
+    setAtlasDesigning(true);
+    setDesignedAgent(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('design-agent', {
+        body: { 
+          description: atlasDescription,
+          atlasPrompt: atlasAgent.system_prompt
+        }
+      });
+
+      if (error) throw error;
+      if (data?.agent) {
+        setDesignedAgent(data.agent);
+      }
+    } catch (error) {
+      console.error('Atlas design error:', error);
+      toast({ 
+        title: t('common.error'), 
+        description: error instanceof Error ? error.message : 'Failed to design agent',
+        variant: 'destructive' 
+      });
+    } finally {
+      setAtlasDesigning(false);
+    }
+  };
+
+  const applyDesignedAgent = () => {
+    if (!designedAgent) return;
+
+    setFormData({
+      ...formData,
+      name: designedAgent.name,
+      description: designedAgent.mandate,
+      icon: designedAgent.suggested_icon || 'bot',
+      system_prompt: designedAgent.system_prompt,
+      temperature: designedAgent.suggested_temperature,
+    });
+
+    setAtlasOpen(false);
+    setDesignedAgent(null);
+    setAtlasDescription('');
+    
+    toast({ title: t('common.success'), description: 'Agent design applied!' });
+  };
+
   if (agentLoading) {
     return (
       <AppLayout title={t('agents.builder')}>
@@ -195,10 +281,114 @@ export default function AgentBuilder() {
   return (
     <AppLayout title={isEditing ? t('agents.edit') : t('agents.create')}>
       <div className="max-w-2xl">
-        <Button variant="ghost" onClick={() => navigate('/agents')} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('agents.backToAgents')}
-        </Button>
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" onClick={() => navigate('/agents')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('agents.backToAgents')}
+          </Button>
+          
+          {!isEditing && (
+            <Dialog open={atlasOpen} onOpenChange={setAtlasOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {t('agents.designWithAtlas')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    {t('agents.atlasDesigner')}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {t('agents.atlasDescription')}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-4">
+                  <Textarea
+                    placeholder={t('agents.atlasPlaceholder')}
+                    value={atlasDescription}
+                    onChange={(e) => setAtlasDescription(e.target.value)}
+                    rows={4}
+                    disabled={atlasDesigning}
+                  />
+                  
+                  <Button 
+                    onClick={handleAtlasDesign} 
+                    disabled={!atlasDescription.trim() || atlasDesigning}
+                    className="w-full"
+                  >
+                    {atlasDesigning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {t('agents.designing')}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {t('agents.design')}
+                      </>
+                    )}
+                  </Button>
+
+                  {designedAgent && (
+                    <Card className="border-purple-200 dark:border-purple-800">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">{designedAgent.name}</CardTitle>
+                        <CardDescription>{designedAgent.mandate}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Primary Domain</Label>
+                          <p className="text-sm">{designedAgent.primary_domain}</p>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Cognitive Style</Label>
+                          <p className="text-sm">{designedAgent.reasoning_mode} • {designedAgent.depth_level} • {designedAgent.decision_bias}</p>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Core Responsibilities</Label>
+                          <ul className="text-sm list-disc list-inside">
+                            {designedAgent.core_responsibilities.slice(0, 4).map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {designedAgent.exclusions && designedAgent.exclusions.length > 0 && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Explicit Exclusions</Label>
+                            <ul className="text-sm list-disc list-inside text-muted-foreground">
+                              {designedAgent.exclusions.slice(0, 3).map((e, i) => (
+                                <li key={i}>{e}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div>
+                          <Label className="text-xs text-muted-foreground">System Prompt Preview</Label>
+                          <pre className="text-xs bg-muted p-2 rounded-md max-h-32 overflow-y-auto whitespace-pre-wrap">
+                            {designedAgent.system_prompt.substring(0, 500)}...
+                          </pre>
+                        </div>
+
+                        <Button onClick={applyDesignedAgent} className="w-full">
+                          <Check className="h-4 w-4 mr-2" />
+                          {t('agents.applyDesign')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
 
         <Card>
           <CardHeader>

@@ -94,7 +94,15 @@
     "noAgents": "No agents yet",
     "noAgentsDesc": "Create your first AI agent to start building deliberation teams",
     "createFirst": "Create your first agent",
-    "configure": "Configure your AI agent's personality and capabilities"
+    "configure": "Configure your AI agent's personality and capabilities",
+    "designWithAtlas": "Design with Atlas",
+    "atlasDesigner": "Atlas Agent Designer",
+    "atlasDescription": "Describe what kind of agent you need and Atlas will design a complete, production-ready agent specification for you.",
+    "describeAgent": "Describe the agent you need...",
+    "designing": "Atlas is designing your agent...",
+    "design": "Design Agent",
+    "applyDesign": "Apply This Design",
+    "atlasPlaceholder": "Example: I need an agent that can analyze legal contracts and identify potential risks, compliance issues, and unfavorable clauses. It should be thorough but also practical in suggesting alternatives."
   },
   "rooms": {
     "title": "Rooms",
