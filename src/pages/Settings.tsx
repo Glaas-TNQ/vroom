@@ -24,6 +24,27 @@ interface ProviderProfile {
   is_default: boolean;
 }
 
+// Models updated as of December 2025
+const OPENAI_MODELS = [
+  { value: 'gpt-5', label: 'GPT-5 (Latest)' },
+  { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
+  { value: 'gpt-5-nano', label: 'GPT-5 Nano' },
+  { value: 'gpt-4.1', label: 'GPT-4.1' },
+  { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+  { value: 'o3', label: 'O3 (Reasoning)' },
+  { value: 'o4-mini', label: 'O4 Mini (Fast Reasoning)' },
+  { value: 'gpt-4o', label: 'GPT-4o (Legacy)' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)' },
+];
+
+const ANTHROPIC_MODELS = [
+  { value: 'claude-sonnet-4-5-20250514', label: 'Claude Sonnet 4.5 (Latest)' },
+  { value: 'claude-opus-4-1-20250805', label: 'Claude Opus 4.1' },
+  { value: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet' },
+  { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+  { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Fast)' },
+];
+
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -38,6 +59,14 @@ export default function Settings() {
     endpoint: '',
     model: '',
   });
+
+  const getModelsForProvider = (provider: ProviderType) => {
+    switch (provider) {
+      case 'openai': return OPENAI_MODELS;
+      case 'anthropic': return ANTHROPIC_MODELS;
+      default: return [];
+    }
+  };
 
   const { data: providers, isLoading } = useQuery({
     queryKey: ['provider-profiles'],
@@ -205,13 +234,31 @@ export default function Settings() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="model">Default Model (optional)</Label>
-                  <Input
-                    id="model"
-                    placeholder={formData.provider_type === 'openai' ? 'gpt-4o' : formData.provider_type === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'model-name'}
-                    value={formData.model}
-                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                  />
+                  <Label htmlFor="model">Default Model</Label>
+                  {formData.provider_type === 'custom' ? (
+                    <Input
+                      id="model"
+                      placeholder="model-name"
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                    />
+                  ) : (
+                    <Select
+                      value={formData.model}
+                      onValueChange={(v) => setFormData({ ...formData, model: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        {getModelsForProvider(formData.provider_type).map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={createMutation.isPending}>
                   {createMutation.isPending ? 'Adding...' : 'Add Provider'}
