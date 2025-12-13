@@ -183,7 +183,7 @@ export default function Dashboard() {
                             </div>
                           </Link>
                         </HoverCardTrigger>
-                        <HoverCardContent className="w-72" side="right" align="start">
+                        <HoverCardContent className="w-72" side="top" align="start">
                           <div className="space-y-3">
                             <div>
                               <h4 className="font-semibold text-sm">{t('sessions.topic')}</h4>
