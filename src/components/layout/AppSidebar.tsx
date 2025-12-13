@@ -19,7 +19,6 @@ export function AppSidebar() {
     { title: t('nav.dashboard'), url: '/', icon: Home },
     { title: t('nav.agents'), url: '/agents', icon: Bot },
     { title: t('nav.rooms'), url: '/rooms', icon: LayoutGrid },
-    { title: t('nav.oneOnOne'), url: '/one-on-one', icon: MessageCircle },
     { title: t('nav.sessions'), url: '/sessions', icon: History },
     { title: t('nav.settings'), url: '/settings', icon: Settings },
   ];
@@ -63,6 +62,18 @@ export function AppSidebar() {
                   >
                     <Play className="h-4 w-4" />
                     <span>{t('nav.newSession')}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to="/one-on-one"
+                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                    activeClassName="bg-accent text-accent-foreground font-medium"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>{t('nav.oneOnOne')}</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
