@@ -11,11 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Sparkles, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, Loader2, Check, MessageSquare, Thermometer, Coins, Bot } from 'lucide-react';
 
 const ICONS = [
   { value: 'briefcase', label: '💼 CFO', emoji: '💼' },
@@ -274,6 +276,21 @@ export default function AgentBuilder() {
     toast({ title: t('common.success'), description: 'Agent design applied!' });
   };
 
+  const iconMap: Record<string, string> = {
+    'briefcase': '💼',
+    'scale': '⚖️',
+    'target': '🎯',
+    'brain': '🧠',
+    'chart': '📊',
+    'bot': '🤖',
+  };
+
+  const getProviderName = () => {
+    if (!formData.provider_profile_id) return 'Lovable AI';
+    const provider = providers?.find(p => p.id === formData.provider_profile_id);
+    return provider?.name || 'Custom';
+  };
+
   if (agentLoading) {
     return (
       <AppLayout title={t('agents.builder')}>
@@ -284,8 +301,8 @@ export default function AgentBuilder() {
 
   return (
     <AppLayout title={isEditing ? t('agents.edit') : t('agents.create')}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate('/agents')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('agents.backToAgents')}
@@ -394,182 +411,308 @@ export default function AgentBuilder() {
           )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditing ? t('agents.edit') : t('agents.create')}</CardTitle>
-            <CardDescription>{t('agents.configure')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">{t('agents.name')}</Label>
-                  <Input
-                    id="name"
-                    placeholder="CFO Advisor"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">{t('agents.description')}</Label>
-                  <Input
-                    id="description"
-                    placeholder="Financial analysis expert"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>{t('agents.type')}</Label>
-                  <Select value={formData.icon} onValueChange={handleIconChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ICONS.map((icon) => (
-                        <SelectItem key={icon.value} value={icon.value}>
-                          {icon.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('agents.color')}</Label>
-                  <div className="flex gap-2">
-                    {COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        className={`w-8 h-8 rounded-full border-2 transition-transform ${
-                          formData.color === color.value ? 'border-foreground scale-110' : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        onClick={() => setFormData({ ...formData, color: color.value })}
-                        title={color.label}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Form Column - 2/3 width */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isEditing ? t('agents.edit') : t('agents.create')}</CardTitle>
+                <CardDescription>{t('agents.configure')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Basic Info Row */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">{t('agents.name')}</Label>
+                      <Input
+                        id="name"
+                        placeholder="CFO Advisor"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
                       />
-                    ))}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">{t('agents.description')}</Label>
+                      <Input
+                        id="description"
+                        placeholder="Financial analysis expert"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Appearance Row */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>{t('agents.type')}</Label>
+                      <Select value={formData.icon} onValueChange={handleIconChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ICONS.map((icon) => (
+                            <SelectItem key={icon.value} value={icon.value}>
+                              {icon.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('agents.color')}</Label>
+                      <div className="flex gap-2 pt-1">
+                        {COLORS.map((color) => (
+                          <button
+                            key={color.value}
+                            type="button"
+                            className={`w-8 h-8 rounded-full border-2 transition-transform ${
+                              formData.color === color.value ? 'border-foreground scale-110' : 'border-transparent'
+                            }`}
+                            style={{ backgroundColor: color.value }}
+                            onClick={() => setFormData({ ...formData, color: color.value })}
+                            title={color.label}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Provider */}
+                  <div className="space-y-2">
+                    <Label>{t('agents.apiProvider')}</Label>
+                    <Select
+                      value={formData.provider_profile_id || '__default__'}
+                      onValueChange={(v) => setFormData({ ...formData, provider_profile_id: v === '__default__' ? '' : v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('agents.apiProviderDefault')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__default__">{t('agents.apiProviderDefault')}</SelectItem>
+                        {providers?.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.name} ({provider.provider_type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{t('agents.apiProviderHint')}</p>
+                  </div>
+
+                  {/* System Prompt */}
+                  <div className="space-y-2">
+                    <Label htmlFor="system_prompt">{t('agents.systemPrompt')}</Label>
+                    <Textarea
+                      id="system_prompt"
+                      placeholder="You are a helpful AI assistant..."
+                      value={formData.system_prompt}
+                      onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
+                      rows={10}
+                      className="font-mono text-sm"
+                      required
+                    />
+                  </div>
+
+                  {/* Temperature and Tokens Row */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <Thermometer className="h-4 w-4" />
+                        {t('agents.temperature')}: {formData.temperature}
+                      </Label>
+                      <Slider
+                        value={[formData.temperature]}
+                        onValueChange={([v]) => setFormData({ ...formData, temperature: v })}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                      />
+                      <p className="text-xs text-muted-foreground">{t('agents.temperatureHint')}</p>
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="max_tokens" className="flex items-center gap-2">
+                        <Coins className="h-4 w-4" />
+                        {t('agents.maxTokens')}
+                      </Label>
+                      <Input
+                        id="max_tokens"
+                        type="number"
+                        value={formData.max_tokens}
+                        onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
+                        min={256}
+                        max={8192}
+                        disabled={formData.unlimited_tokens}
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="unlimited_tokens"
+                          checked={formData.unlimited_tokens}
+                          onCheckedChange={(checked) => setFormData({ ...formData, unlimited_tokens: checked })}
+                        />
+                        <Label htmlFor="unlimited_tokens" className="text-xs">{t('agents.unlimitedTokens')}</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit Buttons */}
+                  {!isSystemAgent && (
+                    <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveMutation.isPending ? t('common.loading') : t('common.save')}
+                    </Button>
+                  )}
+                  {isSystemAgent && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentReadOnly')}</p>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={async () => {
+                          const { error } = await supabase.from('agents').insert({
+                            user_id: user!.id,
+                            name: `${formData.name} (Copy)`,
+                            description: formData.description || null,
+                            icon: formData.icon,
+                            color: formData.color,
+                            system_prompt: formData.system_prompt,
+                            provider_profile_id: formData.provider_profile_id || null,
+                            temperature: formData.temperature,
+                            max_tokens: formData.max_tokens,
+                            unlimited_tokens: formData.unlimited_tokens,
+                          });
+                          if (error) {
+                            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+                          } else {
+                            toast({ title: t('agents.duplicated') });
+                            navigate('/agents');
+                          }
+                        }}
+                      >
+                        {t('agents.duplicate')}
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Preview Column - 1/3 width */}
+          <div className="space-y-4">
+            {/* Agent Preview Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t('agents.preview')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Agent Avatar Preview */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-12 w-12 rounded-lg flex items-center justify-center text-2xl shrink-0"
+                    style={{ backgroundColor: `${formData.color}20` }}
+                  >
+                    {iconMap[formData.icon] || '🤖'}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">
+                      {formData.name || 'Agent Name'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {formData.description || 'No description'}
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>{t('agents.apiProvider')}</Label>
-                <Select
-                  value={formData.provider_profile_id || '__default__'}
-                  onValueChange={(v) => setFormData({ ...formData, provider_profile_id: v === '__default__' ? '' : v })}
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <Thermometer className="h-3 w-3" />
+                      Temperature
+                    </div>
+                    <div className="font-semibold">{formData.temperature}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <Coins className="h-3 w-3" />
+                      Tokens
+                    </div>
+                    <div className="font-semibold">
+                      {formData.unlimited_tokens ? '∞' : formData.max_tokens}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Provider Badge */}
+                <div className="flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary" className="text-xs">
+                    {getProviderName()}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Session Preview */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Session Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="rounded-lg p-4 border-l-4"
+                  style={{ 
+                    borderLeftColor: formData.color,
+                    backgroundColor: `${formData.color}08`
+                  }}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('agents.apiProviderDefault')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__default__">{t('agents.apiProviderDefault')}</SelectItem>
-                    {providers?.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name} ({provider.provider_type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">{t('agents.apiProviderHint')}</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="system_prompt">{t('agents.systemPrompt')}</Label>
-                <Textarea
-                  id="system_prompt"
-                  placeholder="You are a helpful AI assistant..."
-                  value={formData.system_prompt}
-                  onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
-                  rows={8}
-                  required
-                />
-              </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <Label>{t('agents.temperature')}: {formData.temperature}</Label>
-                  <Slider
-                    value={[formData.temperature]}
-                    onValueChange={([v]) => setFormData({ ...formData, temperature: v })}
-                    min={0}
-                    max={1}
-                    step={0.1}
-                  />
-                  <p className="text-xs text-muted-foreground">{t('agents.temperatureHint')}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                      style={{ backgroundColor: `${formData.color}20` }}
+                    >
+                      {iconMap[formData.icon] || '🤖'}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-sm">
+                        {formData.name || 'Agent Name'}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-2">Round 1</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-11">
+                    This is how the agent's messages will appear during deliberation sessions...
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max_tokens">{t('agents.maxTokens')}</Label>
-                  <Input
-                    id="max_tokens"
-                    type="number"
-                    value={formData.max_tokens}
-                    onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
-                    min={256}
-                    max={8192}
-                    disabled={formData.unlimited_tokens}
-                  />
-                </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex items-center space-x-3">
-                <Switch
-                  id="unlimited_tokens"
-                  checked={formData.unlimited_tokens}
-                  onCheckedChange={(checked) => setFormData({ ...formData, unlimited_tokens: checked })}
-                />
-                <div>
-                  <Label htmlFor="unlimited_tokens">{t('agents.unlimitedTokens')}</Label>
-                  <p className="text-xs text-muted-foreground">{t('agents.unlimitedTokensHint')}</p>
-                </div>
-              </div>
-
-              {!isSystemAgent && (
-                <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveMutation.isPending ? t('common.loading') : t('common.save')}
-                </Button>
-              )}
-              {isSystemAgent && (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentReadOnly')}</p>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={async () => {
-                      const { error } = await supabase.from('agents').insert({
-                        user_id: user!.id,
-                        name: `${formData.name} (Copy)`,
-                        description: formData.description || null,
-                        icon: formData.icon,
-                        color: formData.color,
-                        system_prompt: formData.system_prompt,
-                        provider_profile_id: formData.provider_profile_id || null,
-                        temperature: formData.temperature,
-                        max_tokens: formData.max_tokens,
-                        unlimited_tokens: formData.unlimited_tokens,
-                      });
-                      if (error) {
-                        toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
-                      } else {
-                        toast({ title: t('agents.duplicated') });
-                        navigate('/agents');
-                      }
-                    }}
-                  >
-                    {t('agents.duplicate')}
-                  </Button>
-                </div>
-              )}
-            </form>
-          </CardContent>
-        </Card>
+            {/* System Prompt Preview */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Prompt Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[200px]">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
+                    {formData.system_prompt || 'No system prompt defined...'}
+                  </pre>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
