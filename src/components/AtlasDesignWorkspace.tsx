@@ -32,6 +32,7 @@ interface ProviderProfile {
 
 interface AgentSpec {
   name: string;
+  short_description: string;
   codename: string;
   mandate: string;
   primary_domain: string;
@@ -284,9 +285,14 @@ Please update the agent specification accordingly, keeping what works and improv
                 </CardTitle>
                 <Badge variant="secondary">{designedAgent?.codename}</Badge>
               </div>
-              <CardDescription>{designedAgent?.mandate}</CardDescription>
+              <CardDescription className="text-xs">{designedAgent?.mandate}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Short Description */}
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label className="text-xs text-muted-foreground">Overview (for agent selection)</Label>
+                <p className="text-sm mt-1">{designedAgent?.short_description}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
