@@ -14,7 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Info } from 'lucide-react';
+import { ArrowLeft, Save, Info, Sparkles } from 'lucide-react';
+import ArchimedeDesignWorkspace from '@/components/ArchimedeDesignWorkspace';
 
 interface Agent {
   id: string;
@@ -23,6 +24,18 @@ interface Agent {
   icon: string;
   color: string;
   is_system: boolean;
+}
+
+interface RoomSpec {
+  name: string;
+  short_description: string;
+  methodology: string;
+  workflow_type: string;
+  max_rounds: number;
+  agent_ids: string[];
+  available_tools?: string[];
+  require_consensus?: boolean;
+  objective_template: string;
 }
 
 const METHODOLOGIES = [
@@ -42,6 +55,13 @@ const METHODOLOGY_ICONS: Record<string, string> = {
 };
 
 const WORKFLOWS = ['cyclic', 'sequential_pipeline', 'concurrent'];
+
+// Map workflow types from Archimede to database values
+const WORKFLOW_MAP: Record<string, string> = {
+  'sequential': 'sequential_pipeline',
+  'parallel': 'concurrent',
+  'cyclic': 'cyclic',
+};
 
 export default function RoomBuilder() {
   const { t } = useTranslation();
@@ -64,6 +84,8 @@ export default function RoomBuilder() {
     available_tools: [] as string[],
   });
 
+  const [archimedeMode, setArchimedeMode] = useState(false);
+
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', id],
     queryFn: async () => {
@@ -73,6 +95,20 @@ export default function RoomBuilder() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: archimedeAgent } = useQuery({
+    queryKey: ['archimede-agent'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('system_prompt')
+        .eq('name', 'Archimede')
+        .eq('is_system', true)
+        .single();
+      if (error) return null;
+      return data;
+    },
   });
 
   const { data: agents } = useQuery({
@@ -174,6 +210,24 @@ export default function RoomBuilder() {
     }));
   };
 
+  const handleArchimedeApply = (spec: RoomSpec) => {
+    setFormData({
+      ...formData,
+      name: spec.name,
+      description: spec.short_description,
+      methodology: spec.methodology,
+      workflow_type: WORKFLOW_MAP[spec.workflow_type] || spec.workflow_type,
+      agent_ids: spec.agent_ids,
+      max_rounds: spec.max_rounds,
+      require_consensus: spec.require_consensus || false,
+      objective_template: spec.objective_template,
+      available_tools: spec.available_tools || [],
+    });
+
+    setArchimedeMode(false);
+    toast({ title: t('common.success'), description: 'Room design applied!' });
+  };
+
   const iconMap: Record<string, string> = {
     'briefcase': '💼',
     'scale': '⚖️',
@@ -181,6 +235,10 @@ export default function RoomBuilder() {
     'brain': '🧠',
     'chart': '📊',
     'bot': '🤖',
+    'lightbulb': '💡',
+    'presentation': '📽️',
+    'heart-handshake': '🤝',
+    'layout-grid': '📐',
   };
 
   if (roomLoading) {
@@ -191,13 +249,35 @@ export default function RoomBuilder() {
     );
   }
 
+  // Archimede workspace mode - full page takeover
+  if (archimedeMode) {
+    return (
+      <AppLayout title="Archimede Room Designer">
+        <ArchimedeDesignWorkspace
+          archimedePrompt={archimedeAgent?.system_prompt}
+          onApply={handleArchimedeApply}
+          onCancel={() => setArchimedeMode(false)}
+        />
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title={isEditing ? t('rooms.edit') : t('rooms.create')}>
-      <div className="max-w-3xl">
-        <Button variant="ghost" onClick={() => navigate('/rooms')} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('rooms.backToRooms')}
-        </Button>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate('/rooms')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('rooms.backToRooms')}
+          </Button>
+          
+          {!isEditing && (
+            <Button variant="outline" onClick={() => setArchimedeMode(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Design with Archimede
+            </Button>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
@@ -228,7 +308,7 @@ export default function RoomBuilder() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[3, 4, 5, 6, 7, 8, 10].map((n) => (
+                      {[3, 4, 5, 6, 7, 8, 10, 12, 15].map((n) => (
                         <SelectItem key={n} value={n.toString()}>{n} rounds</SelectItem>
                       ))}
                     </SelectContent>
@@ -236,15 +316,22 @@ export default function RoomBuilder() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">{t('agents.description')}</Label>
+                <Label htmlFor="description">
+                  {t('agents.description')} <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe the purpose of this room..."
+                  placeholder="2-3 sentence overview of room purpose and approach..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
+                  maxLength={250}
                   disabled={isSystemRoom}
+                  required={!isSystemRoom}
                 />
+                <p className="text-xs text-muted-foreground">
+                  {formData.description.length}/250 - Used for room selection and context efficiency
+                </p>
               </div>
             </CardContent>
           </Card>

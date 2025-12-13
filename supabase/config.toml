@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.one-on-one-chat]
 verify_jwt = true
+
+[functions.design-room]
+verify_jwt = true
