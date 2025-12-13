@@ -52,6 +52,10 @@ serve(async (req) => {
                     type: 'string',
                     description: 'The name of the agent'
                   },
+                  short_description: {
+                    type: 'string',
+                    description: 'A 2-3 sentence summary of the agent competencies and expertise for quick reference. Max 200 characters. This will be used for agent selection and token-efficient context.'
+                  },
                   codename: {
                     type: 'string',
                     description: 'Machine-friendly identifier (snake_case)'
@@ -106,11 +110,11 @@ serve(async (req) => {
                   },
                   suggested_icon: {
                     type: 'string',
-                    enum: ['briefcase', 'scale', 'target', 'brain', 'chart', 'bot'],
+                    enum: ['briefcase', 'scale', 'target', 'brain', 'chart', 'bot', 'lightbulb', 'presentation', 'heart-handshake', 'shield', 'zap', 'search', 'users', 'code', 'database'],
                     description: 'Suggested icon based on agent type'
                   }
                 },
-                required: ['name', 'codename', 'mandate', 'primary_domain', 'core_responsibilities', 'system_prompt', 'suggested_temperature', 'suggested_icon'],
+                required: ['name', 'short_description', 'codename', 'mandate', 'primary_domain', 'core_responsibilities', 'system_prompt', 'suggested_temperature', 'suggested_icon'],
                 additionalProperties: false
               }
             }

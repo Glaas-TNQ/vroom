@@ -78,6 +78,7 @@ interface ProviderProfile {
 
 interface AgentSpec {
   name: string;
+  short_description: string;
   codename: string;
   mandate: string;
   primary_domain: string;
@@ -233,7 +234,7 @@ export default function AgentBuilder() {
     setFormData({
       ...formData,
       name: spec.name,
-      description: spec.mandate,
+      description: spec.short_description || spec.mandate,
       icon: spec.suggested_icon || 'bot',
       system_prompt: spec.system_prompt,
       temperature: spec.suggested_temperature,
@@ -314,13 +315,21 @@ export default function AgentBuilder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="description">{t('agents.description')}</Label>
-                      <Input
+                      <Label htmlFor="description">
+                        {t('agents.description')} <span className="text-destructive">*</span>
+                      </Label>
+                      <Textarea
                         id="description"
-                        placeholder="Financial analysis expert"
+                        placeholder="2-3 sentence overview of agent expertise for quick selection..."
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={2}
+                        maxLength={250}
+                        required={!isSystemAgent}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        {formData.description.length}/250 - Used for agent selection and context efficiency
+                      </p>
                     </div>
                   </div>
 
