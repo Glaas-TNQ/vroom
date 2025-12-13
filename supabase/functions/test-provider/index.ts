@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +12,42 @@ serve(async (req) => {
   }
 
   try {
-    const { provider_type, api_key, endpoint, model } = await req.json();
+    const body = await req.json();
+    
+    let provider_type: string;
+    let api_key: string;
+    let endpoint: string | null = null;
+    let model: string | null = null;
+
+    // Support both modes: direct API key (for testing new keys) and provider_id (for existing providers)
+    if (body.provider_id) {
+      // Fetch decrypted provider from database
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { data: provider, error } = await supabase
+        .from('provider_profiles_decrypted')
+        .select('*')
+        .eq('id', body.provider_id)
+        .single();
+
+      if (error || !provider) {
+        throw new Error("Provider not found");
+      }
+
+      provider_type = provider.provider_type;
+      api_key = provider.api_key;
+      endpoint = provider.endpoint;
+      model = provider.model;
+    } else {
+      // Direct API key testing (for new keys before saving)
+      provider_type = body.provider_type;
+      api_key = body.api_key;
+      endpoint = body.endpoint;
+      model = body.model;
+    }
+
     console.log("Testing provider:", provider_type);
 
     let testUrl: string;

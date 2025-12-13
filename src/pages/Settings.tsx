@@ -153,12 +153,10 @@ export default function Settings() {
   const testConnection = async (provider: ProviderProfile) => {
     setTestingId(provider.id);
     try {
+      // Test connection using provider ID - edge function will fetch decrypted key server-side
       const { data, error } = await supabase.functions.invoke('test-provider', {
         body: { 
-          provider_type: provider.provider_type,
-          api_key: provider.api_key,
-          endpoint: provider.endpoint,
-          model: provider.model,
+          provider_id: provider.id,
         },
       });
       

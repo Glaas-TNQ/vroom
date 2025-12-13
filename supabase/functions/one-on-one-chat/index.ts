@@ -52,7 +52,7 @@ serve(async (req) => {
     // Fetch the agent
     const { data: agent, error: agentError } = await supabase
       .from('agents')
-      .select('*, provider_profiles(*)')
+      .select('*')
       .eq('id', agentId)
       .single();
 
@@ -64,11 +64,25 @@ serve(async (req) => {
       });
     }
 
-    // Fetch override provider if specified
+    // Fetch agent's provider profile using decrypted view (server-side only)
+    let agentProvider = null;
+    if (agent.provider_profile_id) {
+      const { data: providerData } = await supabase
+        .from('provider_profiles_decrypted')
+        .select('*')
+        .eq('id', agent.provider_profile_id)
+        .single();
+      
+      if (providerData) {
+        agentProvider = providerData;
+      }
+    }
+
+    // Fetch override provider if specified (using decrypted view)
     let overrideProvider = null;
     if (providerOverrideId) {
       const { data: providerData, error: providerError } = await supabase
-        .from('provider_profiles')
+        .from('provider_profiles_decrypted')
         .select('*')
         .eq('id', providerOverrideId)
         .single();
@@ -103,9 +117,8 @@ serve(async (req) => {
     // Priority: override provider > agent's provider > Lovable AI
     if (overrideProvider) {
       response = await callProviderAPI(overrideProvider, messages, agent.temperature, maxTokens);
-    } else if (agent.provider_profile_id && agent.provider_profiles) {
-      const provider = agent.provider_profiles;
-      response = await callProviderAPI(provider, messages, agent.temperature, maxTokens);
+    } else if (agent.provider_profile_id && agentProvider) {
+      response = await callProviderAPI(agentProvider, messages, agent.temperature, maxTokens);
     } else {
       // Use Lovable AI
       response = await callLovableAI(lovableApiKey!, messages, agent.temperature, maxTokens);

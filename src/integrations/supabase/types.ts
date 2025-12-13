@@ -74,6 +74,13 @@ export type Database = {
             referencedRelation: "provider_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agents_provider_profile_id_fkey"
+            columns: ["provider_profile_id"]
+            isOneToOne: false
+            referencedRelation: "provider_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       one_on_one_messages: {
@@ -389,10 +396,49 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      provider_profiles_decrypted: {
+        Row: {
+          api_key: string | null
+          created_at: string | null
+          endpoint: string | null
+          id: string | null
+          is_default: boolean | null
+          model: string | null
+          name: string | null
+          provider_type: Database["public"]["Enums"]["provider_type"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          api_key?: never
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          model?: string | null
+          name?: string | null
+          provider_type?: Database["public"]["Enums"]["provider_type"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          api_key?: never
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          model?: string | null
+          name?: string | null
+          provider_type?: Database["public"]["Enums"]["provider_type"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      decrypt_api_key: { Args: { encrypted_key: string }; Returns: string }
+      encrypt_api_key: { Args: { plain_key: string }; Returns: string }
     }
     Enums: {
       provider_type: "openai" | "anthropic" | "custom" | "perplexity" | "tavily"
