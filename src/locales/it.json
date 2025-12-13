@@ -267,7 +267,11 @@
     "createSession": "Crea Sessione",
     "creating": "Creazione...",
     "sessionCreated": "Sessione creata",
-    "errorCreating": "Errore nella creazione"
+    "errorCreating": "Errore nella creazione",
+    "globalProvider": "Provider Globale per Sessione",
+    "selectProvider": "Seleziona provider",
+    "applyToAll": "Applica a Tutti",
+    "globalProviderDesc": "Seleziona un provider e clicca 'Applica a Tutti' per impostarlo per tutti gli agenti selezionati"
   },
   "roomAdvisor": {
     "title": "Room Advisor",
