@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  en: "IMPORTANT: Respond in English. All your responses must be written in English.",
+  it: "IMPORTANTE: Rispondi in italiano. Tutte le tue risposte devono essere scritte in italiano.",
+};
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -31,7 +36,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { agentId, message, history, providerOverrideId } = await req.json();
+    const { agentId, message, history, providerOverrideId, locale = 'en' } = await req.json();
 
     if (!agentId || !message) {
       return new Response(JSON.stringify({ error: 'Missing agentId or message' }), {
@@ -39,6 +44,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('One-on-one chat, agent:', agentId, 'locale:', locale);
+
+    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
 
     // Fetch the agent
     const { data: agent, error: agentError } = await supabase
@@ -71,8 +80,11 @@ serve(async (req) => {
     }
 
     // Build messages array with conversation history
+    // Include language instruction in the system prompt
+    const enhancedSystemPrompt = `${agent.system_prompt}\n\n${languageInstruction}`;
+    
     const messages: ChatMessage[] = [
-      { role: 'user', content: agent.system_prompt },
+      { role: 'user', content: enhancedSystemPrompt },
     ];
 
     // Add history

@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  en: "IMPORTANT: Respond in English. All your analysis, insights, and conclusions must be written in English.",
+  it: "IMPORTANTE: Rispondi in italiano. Tutte le tue analisi, intuizioni e conclusioni devono essere scritte in italiano.",
+};
+
 interface ProviderProfile {
   id: string;
   provider_type: string;
@@ -220,33 +225,64 @@ async function callProviderAPI(
 }
 
 // Get methodology-specific system prompt addition
-function getMethodologyContext(methodology: string, round: number, maxRounds: number): string {
+function getMethodologyContext(methodology: string, round: number, maxRounds: number, locale: string): string {
+  const isItalian = locale === 'it';
+  
   const methodologies: Record<string, string> = {
-    analytical_structured: `Follow the McKinsey structured approach:
+    analytical_structured: isItalian 
+      ? `Segui l'approccio strutturato McKinsey:
+- Usa il principio MECE (mutuamente esclusivo, collettivamente esaustivo)
+- Scomponi il problema in componenti logiche
+- Costruisci una sintesi usando il Principio della Piramide
+Fase corrente: ${round <= 2 ? "Definizione e scomposizione del problema" : round <= 4 ? "Analisi e raccolta dati" : "Sintesi e raccomandazioni"}`
+      : `Follow the McKinsey structured approach:
 - Use MECE principle (mutually exclusive, collectively exhaustive)
 - Break down the problem into logical components
 - Build up to a synthesis using the Pyramid Principle
 Current phase: ${round <= 2 ? "Problem definition and decomposition" : round <= 4 ? "Analysis and data gathering" : "Synthesis and recommendations"}`,
     
-    strategic_executive: `Apply Balanced Scorecard thinking:
+    strategic_executive: isItalian
+      ? `Applica il pensiero Balanced Scorecard:
+- Considera le prospettive finanziaria, cliente, processi interni e apprendimento/crescita
+- Allinea con gli obiettivi strategici a lungo termine
+- Definisci KPI misurabili dove rilevante
+Area di focus: ${round <= 2 ? "Analisi delle prospettive" : "Allineamento strategico e pianificazione azioni"}`
+      : `Apply Balanced Scorecard thinking:
 - Consider financial, customer, internal process, and learning/growth perspectives
 - Align with long-term strategic objectives
 - Define measurable KPIs where relevant
 Focus area: ${round <= 2 ? "Perspective analysis" : "Strategic alignment and action planning"}`,
     
-    creative_brainstorming: `Engage in Design Thinking:
+    creative_brainstorming: isItalian
+      ? `Impegnati nel Design Thinking:
+- Prima pensa in modo divergente, poi convergi
+- Costruisci sulle idee degli altri ("Sì, e...")
+- Sfida le assunzioni in modo creativo
+Modalità: ${round <= maxRounds / 2 ? "Ideazione divergente - genera molte idee" : "Sintesi convergente - affina e combina le migliori idee"}`
+      : `Engage in Design Thinking:
 - Think divergently first, then converge
 - Build on others' ideas ("Yes, and...")
 - Challenge assumptions creatively
 Mode: ${round <= maxRounds / 2 ? "Divergent ideation - generate many ideas" : "Convergent synthesis - refine and combine best ideas"}`,
     
-    lean_iterative: `Apply Lean Startup methodology:
+    lean_iterative: isItalian
+      ? `Applica la metodologia Lean Startup:
+- Concentrati sui cicli Build-Measure-Learn
+- Proponi ipotesi testabili
+- Pensa in termini di MVP ed esperimenti
+Fase: ${round === 1 ? "Formazione delle ipotesi" : round <= 3 ? "Design MVP/esperimento" : "Misurazione e apprendimento"}`
+      : `Apply Lean Startup methodology:
 - Focus on Build-Measure-Learn cycles
 - Propose testable hypotheses
 - Think in terms of MVP and experiments
 Phase: ${round === 1 ? "Hypothesis formation" : round <= 3 ? "MVP/experiment design" : "Measurement and learning"}`,
     
-    parallel_ensemble: `Provide your independent expert analysis:
+    parallel_ensemble: isItalian
+      ? `Fornisci la tua analisi esperta indipendente:
+- Concentrati sulla tua prospettiva unica
+- Non limitarti ad essere d'accordo con gli altri
+- Offri intuizioni distinte che possono essere sintetizzate successivamente`
+      : `Provide your independent expert analysis:
 - Focus on your unique perspective
 - Don't simply agree with others
 - Offer distinct insights that can be synthesized later`,
@@ -261,8 +297,10 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId } = await req.json();
-    console.log("Starting session:", sessionId);
+    const { sessionId, locale = 'en' } = await req.json();
+    console.log("Starting session:", sessionId, "locale:", locale);
+
+    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -326,7 +364,7 @@ serve(async (req) => {
     for (let round = 1; round <= session.max_rounds; round++) {
       console.log(`Round ${round} of ${session.max_rounds} (${workflowType})`);
       
-      const methodologyContext = getMethodologyContext(methodology, round, session.max_rounds);
+      const methodologyContext = getMethodologyContext(methodology, round, session.max_rounds, locale);
 
       if (workflowType === "concurrent") {
         // Parallel execution - all agents respond simultaneously
@@ -336,7 +374,7 @@ serve(async (req) => {
           const messages = [
             { 
               role: "system", 
-              content: `${agent.system_prompt}\n\n${methodologyContext}` 
+              content: `${agent.system_prompt}\n\n${languageInstruction}\n\n${methodologyContext}` 
             },
             {
               role: "user",
@@ -379,7 +417,7 @@ serve(async (req) => {
           const messages = [
             { 
               role: "system", 
-              content: `${agent.system_prompt}\n\n${methodologyContext}` 
+              content: `${agent.system_prompt}\n\n${languageInstruction}\n\n${methodologyContext}` 
             },
             {
               role: "user",
@@ -432,18 +470,29 @@ serve(async (req) => {
     }
 
     // Generate action items with methodology-aware synthesis
+    const isItalian = locale === 'it';
     const synthesisPrompt = methodology === "analytical_structured" 
-      ? "Using the Pyramid Principle, synthesize this discussion into 3-5 key action items, starting with the most important recommendation:"
+      ? (isItalian 
+          ? "Usando il Principio della Piramide, sintetizza questa discussione in 3-5 azioni chiave, iniziando dalla raccomandazione più importante:"
+          : "Using the Pyramid Principle, synthesize this discussion into 3-5 key action items, starting with the most important recommendation:")
       : methodology === "strategic_executive"
-      ? "Extract 3-5 strategic action items aligned with the balanced scorecard perspectives (financial, customer, process, growth):"
+      ? (isItalian
+          ? "Estrai 3-5 azioni strategiche allineate alle prospettive della balanced scorecard (finanziaria, cliente, processi, crescita):"
+          : "Extract 3-5 strategic action items aligned with the balanced scorecard perspectives (financial, customer, process, growth):")
       : methodology === "lean_iterative"
-      ? "Identify 3-5 testable hypotheses and next experiments to run:"
-      : "Based on this deliberation, extract 3-5 key action items:";
+      ? (isItalian
+          ? "Identifica 3-5 ipotesi testabili e i prossimi esperimenti da eseguire:"
+          : "Identify 3-5 testable hypotheses and next experiments to run:")
+      : (isItalian
+          ? "Basandoti su questa deliberazione, estrai 3-5 azioni chiave:"
+          : "Based on this deliberation, extract 3-5 key action items:");
 
     const summaryMessages = [
       {
         role: "system",
-        content: "You are an expert at synthesizing discussions into actionable items.",
+        content: isItalian 
+          ? "Sei un esperto nel sintetizzare discussioni in azioni concrete. Rispondi in italiano."
+          : "You are an expert at synthesizing discussions into actionable items. Respond in English.",
       },
       {
         role: "user",

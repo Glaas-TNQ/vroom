@@ -5,13 +5,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  en: "IMPORTANT: All output text (name, descriptions, prompts, responsibilities, etc.) MUST be in English.",
+  it: "IMPORTANTE: Tutto il testo prodotto (nome, descrizioni, prompt, responsabilità, ecc.) DEVE essere in italiano.",
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { description, atlasPrompt } = await req.json();
+    const { description, atlasPrompt, locale = 'en' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -22,7 +27,9 @@ serve(async (req) => {
       throw new Error('Description is required');
     }
 
-    console.log('Designing agent with Atlas for description:', description.substring(0, 100));
+    console.log('Designing agent with Atlas for description:', description.substring(0, 100), 'locale:', locale);
+
+    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -33,7 +40,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: atlasPrompt },
+          { role: 'system', content: `${atlasPrompt}\n\n${languageInstruction}` },
           { 
             role: 'user', 
             content: `Design an agent for the following requirement:\n\n${description}\n\nProvide the complete agent specification following your framework. Focus especially on generating a complete, production-ready system prompt that I can use directly.`

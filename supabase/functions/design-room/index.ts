@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  en: "IMPORTANT: All output text (room name, descriptions, objective templates, tips, agent names/roles, etc.) MUST be in English.",
+  it: "IMPORTANTE: Tutto il testo prodotto (nome della room, descrizioni, template degli obiettivi, suggerimenti, nomi/ruoli degli agenti, ecc.) DEVE essere in italiano.",
+};
+
 const METHODOLOGIES = `
 ## Available Methodologies:
 1. **analytical_structured** - McKinsey-style issue decomposition with MECE principle. Best for complex analysis requiring structured breakdown.
@@ -26,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { description, archimedePrompt, userId, conversationHistory, mode } = await req.json();
+    const { description, archimedePrompt, userId, conversationHistory, mode, locale = 'en' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -37,7 +42,9 @@ serve(async (req) => {
       throw new Error('Description is required');
     }
 
-    console.log('Archimede design request, mode:', mode || 'standard');
+    console.log('Archimede design request, mode:', mode || 'standard', 'locale:', locale);
+
+    const languageInstruction = LANGUAGE_INSTRUCTIONS[locale] || LANGUAGE_INSTRUCTIONS.en;
 
     // Get available agents for context
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -65,6 +72,8 @@ serve(async (req) => {
     ).join("\n") || "No rooms available";
 
     const enhancedSystemPrompt = `${archimedePrompt || 'You are Archimede, an expert Room Designer for multi-agent deliberation systems.'}
+
+${languageInstruction}
 
 ${METHODOLOGIES}
 
@@ -273,14 +282,18 @@ Design optimal Room configurations for deliberation, analysis, and decision-maki
       return new Response(JSON.stringify({ 
         room: roomSpec, 
         availableAgents: agents,
-        response: `I've designed a room called **"${roomSpec.name}"** for you.`
+        response: locale === 'it' 
+          ? `Ho progettato una room chiamata **"${roomSpec.name}"** per te.`
+          : `I've designed a room called **"${roomSpec.name}"** for you.`
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Otherwise return conversational response
-    const textResponse = message?.content || "I need more information about your deliberation needs. Can you describe what decision or analysis you're trying to make?";
+    const textResponse = message?.content || (locale === 'it' 
+      ? "Ho bisogno di più informazioni sulle tue esigenze di deliberazione. Puoi descrivere quale decisione o analisi stai cercando di fare?"
+      : "I need more information about your deliberation needs. Can you describe what decision or analysis you're trying to make?");
     
     return new Response(JSON.stringify({ 
       response: textResponse,
