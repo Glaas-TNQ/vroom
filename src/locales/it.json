@@ -107,7 +107,7 @@
     "unlimitedTokens": "Token Illimitati",
     "unlimitedTokensHint": "Rimuovi il limite di token - l'agente può usarne quanti preferisce"
   },
-  "oneOnOne": {
+"oneOnOne": {
     "title": "Chat 1 on 1",
     "selectAgent": "Seleziona un agente",
     "selectAgentPrompt": "Seleziona un agente per iniziare a chattare",
@@ -121,7 +121,10 @@
     "chatHistory": "Cronologia Chat",
     "noHistory": "Nessuna chat precedente",
     "sessionDeleted": "Chat eliminata",
-    "error": "Si è verificato un errore. Riprova."
+    "error": "Si è verificato un errore. Riprova.",
+    "selectProvider": "Provider",
+    "defaultProvider": "Default (Lovable AI)",
+    "providerOverride": "Override provider per questa chat"
   },
   "rooms": {
     "title": "Stanze",
@@ -267,7 +270,7 @@
     "welcome": "Ciao! Sono il Room Advisor, il tuo consulente AI per la configurazione delle deliberazioni.\n\nRaccontami cosa vuoi ottenere dalla tua prossima sessione di lavoro e ti consiglierò:\n- La **metodologia** più adatta (McKinsey, OKR, Brainstorming, Lean, Ensemble)\n- Il **flusso di lavoro** ideale (ciclico, sequenziale, parallelo)\n- Gli **agenti** più indicati per il tuo obiettivo\n- Il numero di **round** consigliato\n\nAd esempio, puoi dirmi:\n- \"Devo valutare se investire in una nuova linea di prodotto\"\n- \"Voglio generare idee per una campagna marketing innovativa\"\n- \"Devo decidere se acquisire una startup competitor\"",
     "error": "Impossibile contattare il Room Advisor"
   },
-  "settings": {
+"settings": {
     "title": "Impostazioni",
     "providers": "Provider API",
     "providersDesc": "Gestisci le configurazioni dei tuoi provider AI (BYOK)",
@@ -292,6 +295,30 @@
     "testFailed": "Test connessione fallito",
     "language": "Lingua",
     "languageDesc": "Scegli la tua lingua preferita",
-    "preferences": "Preferenze"
+    "preferences": "Preferenze",
+    "appearance": "Aspetto",
+    "appearanceDesc": "Scegli il tema preferito",
+    "theme": "Tema",
+    "themeLight": "Chiaro",
+    "themeDark": "Scuro",
+    "themeSystem": "Sistema"
+  },
+  "systemRooms": {
+    "marketExpansion": {
+      "name": "Analisi Espansione Mercato",
+      "description": "Valuta nuove opportunità di mercato con approccio analitico strutturato. Gli agenti analizzano da prospettive finanziarie, legali, strategiche e critiche."
+    },
+    "productRoadmap": {
+      "name": "Prioritizzazione Roadmap Prodotto",
+      "description": "Bilancia le esigenze degli stakeholder usando metodologia OKR/BSC. Gli agenti valutano funzionalità su impatto finanziario, valore cliente e allineamento strategico."
+    },
+    "investmentDecision": {
+      "name": "Review Decisione Investimento",
+      "description": "Analisi multi-prospettiva concorrente per decisioni di investimento. Specialisti finanziari, legali e strategici analizzano simultaneamente per due diligence completa."
+    },
+    "partnershipEvaluation": {
+      "name": "Valutazione Partnership Strategica",
+      "description": "Valuta potenziali partnership attraverso brainstorming creativo. Analizza termini, sinergie e fit strategico con ideazione collaborativa."
+    }
   }
 }

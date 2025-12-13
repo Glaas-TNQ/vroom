@@ -31,7 +31,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { agentId, message, history } = await req.json();
+    const { agentId, message, history, providerOverrideId } = await req.json();
 
     if (!agentId || !message) {
       return new Response(JSON.stringify({ error: 'Missing agentId or message' }), {
@@ -55,6 +55,21 @@ serve(async (req) => {
       });
     }
 
+    // Fetch override provider if specified
+    let overrideProvider = null;
+    if (providerOverrideId) {
+      const { data: providerData, error: providerError } = await supabase
+        .from('provider_profiles')
+        .select('*')
+        .eq('id', providerOverrideId)
+        .single();
+
+      if (!providerError && providerData) {
+        overrideProvider = providerData;
+        console.log('Using override provider:', overrideProvider.name);
+      }
+    }
+
     // Build messages array with conversation history
     const messages: ChatMessage[] = [
       { role: 'user', content: agent.system_prompt },
@@ -73,8 +88,10 @@ serve(async (req) => {
 
     let response: string;
 
-    // Check if agent has a custom provider
-    if (agent.provider_profile_id && agent.provider_profiles) {
+    // Priority: override provider > agent's provider > Lovable AI
+    if (overrideProvider) {
+      response = await callProviderAPI(overrideProvider, messages, agent.temperature, maxTokens);
+    } else if (agent.provider_profile_id && agent.provider_profiles) {
       const provider = agent.provider_profiles;
       response = await callProviderAPI(provider, messages, agent.temperature, maxTokens);
     } else {

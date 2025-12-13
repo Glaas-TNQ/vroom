@@ -21,6 +21,14 @@ interface Room {
   available_tools: any[];
 }
 
+// Map system room names to localization keys
+const SYSTEM_ROOM_KEYS: Record<string, string> = {
+  'Market Expansion Analysis': 'marketExpansion',
+  'Product Roadmap Prioritization': 'productRoadmap',
+  'Investment Decision Review': 'investmentDecision',
+  'Strategic Partnership Evaluation': 'partnershipEvaluation',
+};
+
 const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
   sequential_pipeline: <span>→</span>,
   cyclic: <RotateCcw className="h-3 w-3" />,
@@ -51,6 +59,20 @@ export default function Rooms() {
 
   const getWorkflowLabel = (workflow: string) => {
     return t(`workflows.${workflow}.label`, { defaultValue: workflow });
+  };
+
+  const getRoomDisplayName = (room: Room): string => {
+    if (room.is_system && SYSTEM_ROOM_KEYS[room.name]) {
+      return t(`systemRooms.${SYSTEM_ROOM_KEYS[room.name]}.name`, { defaultValue: room.name });
+    }
+    return room.name;
+  };
+
+  const getRoomDisplayDescription = (room: Room): string | null => {
+    if (room.is_system && SYSTEM_ROOM_KEYS[room.name]) {
+      return t(`systemRooms.${SYSTEM_ROOM_KEYS[room.name]}.description`, { defaultValue: room.description || '' });
+    }
+    return room.description;
   };
 
   const { data: rooms, isLoading } = useQuery({
@@ -110,10 +132,10 @@ export default function Rooms() {
                 <Card key={room.id} className="hover:border-primary/50 transition-colors">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      {room.name}
+                      {getRoomDisplayName(room)}
                       <Badge variant="secondary" className="text-xs">{t('rooms.system')}</Badge>
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">{room.description}</CardDescription>
+                    <CardDescription className="line-clamp-2">{getRoomDisplayDescription(room)}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex flex-wrap gap-2">

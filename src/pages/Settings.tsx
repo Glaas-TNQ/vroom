@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Key, Plus, Trash2, Check, Loader2, Globe } from 'lucide-react';
+import { Key, Plus, Trash2, Check, Loader2, Globe, Moon, Sun, Monitor } from 'lucide-react';
 
 type ProviderType = 'openai' | 'anthropic' | 'perplexity' | 'tavily' | 'custom';
 
@@ -66,6 +67,7 @@ const LANGUAGES = [
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -196,7 +198,7 @@ export default function Settings() {
   return (
     <AppLayout title={t('settings.title')}>
       <div className="max-w-3xl space-y-6">
-        {/* Language Settings */}
+        {/* Preferences */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -205,7 +207,8 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Language */}
               <div className="flex items-center justify-between">
                 <div>
                   <Label>{t('settings.language')}</Label>
@@ -223,6 +226,40 @@ export default function Settings() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Theme */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>{t('settings.theme')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.appearanceDesc')}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={theme === 'light' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('light')}
+                  >
+                    <Sun className="h-4 w-4 mr-1" />
+                    {t('settings.themeLight')}
+                  </Button>
+                  <Button
+                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('dark')}
+                  >
+                    <Moon className="h-4 w-4 mr-1" />
+                    {t('settings.themeDark')}
+                  </Button>
+                  <Button
+                    variant={theme === 'system' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('system')}
+                  >
+                    <Monitor className="h-4 w-4 mr-1" />
+                    {t('settings.themeSystem')}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

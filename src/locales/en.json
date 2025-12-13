@@ -107,7 +107,7 @@
     "unlimitedTokens": "Unlimited Tokens",
     "unlimitedTokensHint": "Remove token limit - agent can use as many tokens as needed"
   },
-  "oneOnOne": {
+"oneOnOne": {
     "title": "1 on 1 Chat",
     "selectAgent": "Select an agent",
     "selectAgentPrompt": "Select an agent to start chatting",
@@ -121,7 +121,10 @@
     "chatHistory": "Chat History",
     "noHistory": "No previous chats",
     "sessionDeleted": "Chat deleted",
-    "error": "An error occurred. Please try again."
+    "error": "An error occurred. Please try again.",
+    "selectProvider": "Provider",
+    "defaultProvider": "Default (Lovable AI)",
+    "providerOverride": "Override provider for this chat"
   },
   "rooms": {
     "title": "Rooms",
@@ -267,7 +270,7 @@
     "welcome": "Hi! I'm the Room Advisor, your AI consultant for configuring deliberations.\n\nTell me what you want to achieve in your next work session and I'll recommend:\n- The most suitable **methodology** (McKinsey, OKR, Brainstorming, Lean, Ensemble)\n- The ideal **workflow** (cyclic, sequential, parallel)\n- The most appropriate **agents** for your goal\n- The recommended number of **rounds**\n\nFor example, you can tell me:\n- \"I need to evaluate whether to invest in a new product line\"\n- \"I want to generate ideas for an innovative marketing campaign\"\n- \"I need to decide whether to acquire a competitor startup\"",
     "error": "Unable to contact the Room Advisor"
   },
-  "settings": {
+"settings": {
     "title": "Settings",
     "providers": "API Providers",
     "providersDesc": "Manage your AI provider configurations (BYOK)",
@@ -292,6 +295,30 @@
     "testFailed": "Connection test failed",
     "language": "Language",
     "languageDesc": "Choose your preferred language",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "appearance": "Appearance",
+    "appearanceDesc": "Choose your theme preference",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "systemRooms": {
+    "marketExpansion": {
+      "name": "Market Expansion Analysis",
+      "description": "Evaluates new market opportunities with a structured analytical approach. Agents analyze from financial, legal, strategic and critical perspectives."
+    },
+    "productRoadmap": {
+      "name": "Product Roadmap Prioritization",
+      "description": "Balances stakeholder needs using OKR/BSC methodology. Agents evaluate features across financial impact, customer value, and strategic alignment."
+    },
+    "investmentDecision": {
+      "name": "Investment Decision Review",
+      "description": "Concurrent multi-perspective analysis for investment decisions. Financial, legal, and strategic specialists analyze simultaneously for comprehensive due diligence."
+    },
+    "partnershipEvaluation": {
+      "name": "Strategic Partnership Evaluation",
+      "description": "Evaluates potential partnerships through creative brainstorming. Analyzes terms, synergies, and strategic fit with collaborative ideation."
+    }
   }
 }
