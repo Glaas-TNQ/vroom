@@ -225,7 +225,7 @@ export default function SessionView() {
 
   return (
     <AppLayout title={t('sessions.view')}>
-      <div className="h-[calc(100vh-8rem)] flex flex-col">
+      <div className="flex flex-col h-full" style={{ height: 'calc(100vh - 120px)' }}>
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" onClick={() => navigate('/sessions')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -274,9 +274,9 @@ export default function SessionView() {
           </div>
         </div>
 
-        <div className="flex-1 flex rounded-lg border overflow-hidden">
+        <div className="flex-1 flex rounded-lg border overflow-hidden min-h-0">
           {/* Main Content */}
-          <div className="flex-1 h-full flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* Session Header */}
             <div className="p-6 border-b bg-card">
               <div className="flex items-center justify-between mb-3">
@@ -309,7 +309,7 @@ export default function SessionView() {
 
             {/* Tabs for Report/Transcript */}
             {session.status === 'completed' && hasFinalReport ? (
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'transcript')} className="flex-1 flex flex-col min-h-0">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'transcript')} className="flex-1 flex flex-col overflow-hidden">
                 <div className="border-b px-6 pt-2">
                   <TabsList className="bg-transparent p-0 h-auto">
                     <TabsTrigger 
@@ -329,59 +329,55 @@ export default function SessionView() {
                   </TabsList>
                 </div>
 
-                <TabsContent value="report" className="flex-1 m-0 overflow-hidden">
-                  <ScrollArea className="h-full">
-                    <div className="p-6 max-w-4xl">
-                      <Markdown content={session.results.final_report} />
-                    </div>
-                  </ScrollArea>
+                <TabsContent value="report" className="flex-1 m-0 overflow-auto">
+                  <div className="p-6 max-w-4xl">
+                    <Markdown content={session.results.final_report} />
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="transcript" className="flex-1 m-0 overflow-hidden">
-                  <ScrollArea className="h-full">
-                    <div className="p-6">
-                      <div className="space-y-6">
-                        {session.transcript.map((msg, i) => {
-                          const agent = session.agent_config.find(a => a.id === msg.agent_id);
-                          const agentColor = agent?.color || '#6366f1';
-                          
-                          return (
-                            <div 
-                              key={i} 
-                              className="rounded-xl p-6 border-l-4 shadow-sm"
-                              style={{ 
-                                borderLeftColor: agentColor,
-                                backgroundColor: `${agentColor}06`
-                              }}
-                            >
-                              <div className="flex items-center gap-4 mb-4">
-                                <div
-                                  className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
-                                  style={{ backgroundColor: `${agentColor}20` }}
-                                >
-                                  {iconMap[agent?.icon || 'bot'] || '🤖'}
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-base">{msg.agent_name}</span>
-                                  <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
-                                    {t('sessions.round')} {msg.round}
-                                  </span>
-                                </div>
+                <TabsContent value="transcript" className="flex-1 m-0 overflow-auto">
+                  <div className="p-6">
+                    <div className="space-y-6">
+                      {session.transcript.map((msg, i) => {
+                        const agent = session.agent_config.find(a => a.id === msg.agent_id);
+                        const agentColor = agent?.color || '#6366f1';
+                        
+                        return (
+                          <div 
+                            key={i} 
+                            className="rounded-xl p-6 border-l-4 shadow-sm"
+                            style={{ 
+                              borderLeftColor: agentColor,
+                              backgroundColor: `${agentColor}06`
+                            }}
+                          >
+                            <div className="flex items-center gap-4 mb-4">
+                              <div
+                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
+                                style={{ backgroundColor: `${agentColor}20` }}
+                              >
+                                {iconMap[agent?.icon || 'bot'] || '🤖'}
                               </div>
-                              <div className="pl-[3.75rem]">
-                                <Markdown content={msg.content} />
+                              <div>
+                                <span className="font-semibold text-base">{msg.agent_name}</span>
+                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                  {t('sessions.round')} {msg.round}
+                                </span>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                            <div className="pl-[3.75rem]">
+                              <Markdown content={msg.content} />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </TabsContent>
               </Tabs>
             ) : (
               // Draft/Running/Cancelled or no report - show transcript
-              <ScrollArea className="flex-1">
+              <div className="flex-1 overflow-auto">
                 <div className="p-6">
                   {session.transcript.length > 0 ? (
                     <div className="space-y-6">
@@ -435,7 +431,7 @@ export default function SessionView() {
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </div>
 
