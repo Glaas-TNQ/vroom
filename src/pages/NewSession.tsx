@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Play, Layout } from 'lucide-react';
 
 interface Agent {
   id: string;
@@ -21,24 +21,40 @@ interface Agent {
   color: string;
 }
 
-const ROOM_TEMPLATE = {
-  name: 'Strategic Decision Review',
-  description: 'Multi-perspective analysis for important business decisions',
-  suggestedAgents: ['briefcase', 'scale', 'target', 'brain'],
-  maxRounds: 3,
-};
+interface RoomTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  agent_ids: string[];
+  max_rounds: number;
+  objective: string | null;
+  is_system: boolean;
+}
 
 export default function NewSession() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [selectedTemplate, setSelectedTemplate] = useState<RoomTemplate | null>(null);
 
   const [formData, setFormData] = useState({
     topic: '',
     objective: '',
     selectedAgentIds: [] as string[],
     maxRounds: 3,
+  });
+
+  const { data: templates } = useQuery({
+    queryKey: ['room-templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('room_templates')
+        .select('*')
+        .order('is_system', { ascending: false });
+      if (error) throw error;
+      return data as RoomTemplate[];
+    },
   });
 
   const { data: agents } = useQuery({
@@ -49,6 +65,22 @@ export default function NewSession() {
       return data as Agent[];
     },
   });
+
+  const selectTemplate = (template: RoomTemplate) => {
+    setSelectedTemplate(template);
+    setFormData({
+      ...formData,
+      objective: template.objective || '',
+      selectedAgentIds: template.agent_ids,
+      maxRounds: template.max_rounds,
+    });
+    setStep(1);
+  };
+
+  const skipTemplate = () => {
+    setSelectedTemplate(null);
+    setStep(1);
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -69,6 +101,7 @@ export default function NewSession() {
           objective: formData.objective || null,
           agent_config: agentConfig,
           max_rounds: formData.maxRounds,
+          room_template_id: selectedTemplate?.id || null,
           status: 'draft',
         })
         .select()
@@ -111,29 +144,87 @@ export default function NewSession() {
   return (
     <AppLayout title="New Session">
       <div className="max-w-2xl">
-        <Button variant="ghost" onClick={() => navigate('/sessions')} className="mb-4">
+        <Button variant="ghost" onClick={() => step === 0 ? navigate('/sessions') : setStep(step - 1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Sessions
+          {step === 0 ? 'Back to Sessions' : 'Back'}
         </Button>
 
         <div className="flex gap-2 mb-6">
+          <div className={`flex-1 h-2 rounded-full ${step >= 0 ? 'bg-primary' : 'bg-muted'}`} />
           <div className={`flex-1 h-2 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
           <div className={`flex-1 h-2 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
         </div>
+
+        {step === 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Choose a Template</CardTitle>
+              <CardDescription>
+                Start with a pre-configured room or create a custom session
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {templates && templates.length > 0 ? (
+                <div className="grid gap-3">
+                  {templates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => selectTemplate(template)}
+                      className="flex items-start gap-4 p-4 rounded-lg border text-left hover:bg-accent transition-colors"
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Layout className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium flex items-center gap-2">
+                          {template.name}
+                          {template.is_system && (
+                            <span className="text-xs bg-muted px-2 py-0.5 rounded">Template</span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground line-clamp-2">
+                          {template.description}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {template.agent_ids.length} agents • {template.max_rounds} rounds
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No templates available
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <Button variant="outline" onClick={skipTemplate} className="w-full">
+                  Create Custom Session
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {step === 1 && (
           <Card>
             <CardHeader>
               <CardTitle>Define Your Topic</CardTitle>
               <CardDescription>
-                What decision or topic do you want to deliberate on?
+                {selectedTemplate 
+                  ? `Using template: ${selectedTemplate.name}`
+                  : 'What decision or topic do you want to deliberate on?'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg bg-muted/50 border mb-4">
-                <div className="font-medium mb-1">{ROOM_TEMPLATE.name}</div>
-                <div className="text-sm text-muted-foreground">{ROOM_TEMPLATE.description}</div>
-              </div>
+              {selectedTemplate && (
+                <div className="p-4 rounded-lg bg-muted/50 border mb-4">
+                  <div className="font-medium mb-1">{selectedTemplate.name}</div>
+                  <div className="text-sm text-muted-foreground">{selectedTemplate.description}</div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="topic">Topic / Question</Label>
@@ -191,6 +282,7 @@ export default function NewSession() {
               <CardTitle>Select Agents</CardTitle>
               <CardDescription>
                 Choose at least 2 agents to participate in the deliberation
+                {selectedTemplate && ` (pre-selected from template)`}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -240,7 +332,7 @@ export default function NewSession() {
                 </Button>
                 <Button
                   onClick={() => createMutation.mutate()}
-                  disabled={!canProceed || createMutation.isPending}
+                  disabled={formData.selectedAgentIds.length < 2 || createMutation.isPending}
                   className="flex-1"
                 >
                   <Play className="h-4 w-4 mr-2" />
