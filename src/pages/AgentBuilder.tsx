@@ -124,6 +124,7 @@ export default function AgentBuilder() {
   const [atlasDescription, setAtlasDescription] = useState('');
   const [atlasDesigning, setAtlasDesigning] = useState(false);
   const [designedAgent, setDesignedAgent] = useState<AgentSpec | null>(null);
+  const [atlasProviderId, setAtlasProviderId] = useState('');
 
   const { data: agent, isLoading: agentLoading } = useQuery({
     queryKey: ['agent', id],
@@ -179,10 +180,6 @@ export default function AgentBuilder() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      if (isSystemAgent) {
-        throw new Error(t('agents.systemAgentReadOnly'));
-      }
-      
       const payload = {
         user_id: user!.id,
         name: data.name,
@@ -267,11 +264,13 @@ export default function AgentBuilder() {
       icon: designedAgent.suggested_icon || 'bot',
       system_prompt: designedAgent.system_prompt,
       temperature: designedAgent.suggested_temperature,
+      provider_profile_id: atlasProviderId,
     });
 
     setAtlasOpen(false);
     setDesignedAgent(null);
     setAtlasDescription('');
+    setAtlasProviderId('');
     
     toast({ title: t('common.success'), description: 'Agent design applied!' });
   };
@@ -335,6 +334,26 @@ export default function AgentBuilder() {
                     rows={4}
                     disabled={atlasDesigning}
                   />
+                  
+                  <div className="space-y-2">
+                    <Label>{t('agents.apiProvider')}</Label>
+                    <Select
+                      value={atlasProviderId || '__default__'}
+                      onValueChange={(v) => setAtlasProviderId(v === '__default__' ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('agents.apiProviderDefault')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__default__">{t('agents.apiProviderDefault')}</SelectItem>
+                        {providers?.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.name} ({provider.provider_type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
                   <Button 
                     onClick={handleAtlasDesign} 
@@ -566,7 +585,15 @@ export default function AgentBuilder() {
                   )}
                   {isSystemAgent && (
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentReadOnly')}</p>
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={saveMutation.isPending}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {saveMutation.isPending ? t('common.loading') : t('agents.saveProvider')}
+                      </Button>
+                      <p className="text-sm text-muted-foreground text-center">{t('agents.systemAgentProviderHint')}</p>
                       <Button 
                         type="button" 
                         variant="outline" 
