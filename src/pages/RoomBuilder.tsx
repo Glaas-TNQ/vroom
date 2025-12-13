@@ -84,7 +84,7 @@ export default function RoomBuilder() {
     available_tools: [] as string[],
   });
 
-  const [archimedeMode, setArchimedeMode] = useState(false);
+  const [archimedeMode, setArchimedeMode] = useState(!id); // Start in Archimede mode for new rooms
 
   const { data: room, isLoading: roomLoading } = useQuery({
     queryKey: ['room', id],

@@ -6,13 +6,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const METHODOLOGIES = `
+## Available Methodologies:
+1. **analytical_structured** - McKinsey-style issue decomposition with MECE principle. Best for complex analysis requiring structured breakdown.
+2. **strategic_executive** - OKR/Balanced Scorecard perspective alignment. Best for strategic decisions requiring multiple stakeholder views.
+3. **creative_brainstorming** - Design Thinking with role-based contribution. Best for ideation and creative problem-solving.
+4. **lean_iterative** - Build-measure-learn cycles. Best for iterative refinement and hypothesis testing.
+5. **parallel_ensemble** - Concurrent analysis with aggregation. Best for comprehensive evaluation requiring multiple independent perspectives.
+
+## Available Workflows:
+1. **cyclic** - Agents take turns in rounds, building on each other's contributions. Good for iterative refinement.
+2. **sequential** - Agents contribute in a fixed order, passing work to the next. Good for pipeline-style processing.
+3. **parallel** - All agents contribute simultaneously, then synthesize. Good for independent analysis.
+`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { description, archimedePrompt, userId } = await req.json();
+    const { description, archimedePrompt, userId, conversationHistory, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -23,7 +37,7 @@ serve(async (req) => {
       throw new Error('Description is required');
     }
 
-    console.log('Designing room with Archimede for description:', description.substring(0, 100));
+    console.log('Archimede design request, mode:', mode || 'standard');
 
     // Get available agents for context
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -32,19 +46,61 @@ serve(async (req) => {
 
     const { data: agents } = await supabase
       .from("agents")
-      .select("id, name, description, is_system")
+      .select("id, name, description, is_system, system_prompt")
       .or(`user_id.eq.${userId},is_system.eq.true`);
 
-    const agentContext = agents?.map(a => `- ${a.name} (${a.id}): ${a.description || "No description"}`).join("\n") || "No agents available";
+    const agentContext = agents?.map(a => 
+      `- **${a.name}** (${a.id}): ${a.description || "No description"}${a.is_system ? ' [SYSTEM]' : ''}`
+    ).join("\n") || "No agents available";
 
-    const enhancedPrompt = `${archimedePrompt}
+    // Get existing rooms for context
+    const { data: rooms } = await supabase
+      .from("rooms")
+      .select("name, description, methodology, workflow_type")
+      .or(`user_id.eq.${userId},is_system.eq.true`)
+      .limit(10);
 
----
+    const roomsContext = rooms?.map(r => 
+      `- ${r.name}: ${r.description || 'No description'} (${r.methodology}, ${r.workflow_type})`
+    ).join("\n") || "No rooms available";
 
-## Available Agents (use these IDs for agent_ids)
+    const enhancedSystemPrompt = `${archimedePrompt || 'You are Archimede, an expert Room Designer for multi-agent deliberation systems.'}
+
+${METHODOLOGIES}
+
+## Available Agents (use these exact IDs for agent_ids):
 ${agentContext}
 
-When selecting agents, use their exact UUIDs from the list above.`;
+## Existing Rooms for Reference:
+${roomsContext}
+
+## Your Task:
+Design optimal Room configurations for deliberation, analysis, and decision-making. Select the best methodology, workflow, and agents based on the user's needs.
+
+## Important Guidelines:
+1. Select agents by their exact UUIDs from the available list above.
+2. If an ideal agent doesn't exist, include it in the "missing_agents" array with a detailed Atlas prompt to create it.
+3. For highly specialized one-time needs, suggest "ephemeral_agents" - temporary agents that exist only for this session.
+4. Be conversational and helpful. Ask clarifying questions if the request is vague.
+5. Provide a complete room specification when you have enough information.`;
+
+    // Build messages array
+    const messages: any[] = [
+      { role: 'system', content: enhancedSystemPrompt }
+    ];
+
+    // Add conversation history if provided
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      for (const msg of conversationHistory) {
+        messages.push({ role: msg.role, content: msg.content });
+      }
+    }
+
+    // Add current user message
+    messages.push({ 
+      role: 'user', 
+      content: description
+    });
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -54,19 +110,13 @@ When selecting agents, use their exact UUIDs from the list above.`;
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: enhancedPrompt },
-          { 
-            role: 'user', 
-            content: `Design a Room for the following objective:\n\n${description}\n\nProvide the complete Room specification following your framework. Make sure to select appropriate agents from the available list.`
-          }
-        ],
+        messages,
         tools: [
           {
             type: 'function',
             function: {
               name: 'create_room_specification',
-              description: 'Create a complete Room specification with all required fields',
+              description: 'Create a complete Room specification when you have enough information to design the room',
               parameters: {
                 type: 'object',
                 properties: {
@@ -107,7 +157,7 @@ When selecting agents, use their exact UUIDs from the list above.`;
                   agent_ids: {
                     type: 'array',
                     items: { type: 'string' },
-                    description: 'UUIDs of agents to include in this Room'
+                    description: 'UUIDs of existing agents to include in this Room'
                   },
                   agent_roles: {
                     type: 'array',
@@ -119,6 +169,34 @@ When selecting agents, use their exact UUIDs from the list above.`;
                       }
                     },
                     description: 'Each agent role and contribution in this Room'
+                  },
+                  missing_agents: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        suggested_name: { type: 'string' },
+                        expertise: { type: 'string' },
+                        why_needed: { type: 'string' },
+                        atlas_prompt: { type: 'string', description: 'Detailed prompt to give to Atlas for creating this agent' }
+                      },
+                      required: ['suggested_name', 'expertise', 'why_needed', 'atlas_prompt']
+                    },
+                    description: 'Agents that would be ideal but do not exist yet - include Atlas prompts for creating them'
+                  },
+                  ephemeral_agents: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        system_prompt: { type: 'string' },
+                        role_in_room: { type: 'string' }
+                      },
+                      required: ['name', 'system_prompt', 'role_in_room']
+                    },
+                    description: 'Throwaway agents for this specific session only - hyper-specialized for the task at hand'
                   },
                   available_tools: {
                     type: 'array',
@@ -158,7 +236,7 @@ When selecting agents, use their exact UUIDs from the list above.`;
             }
           }
         ],
-        tool_choice: { type: 'function', function: { name: 'create_room_specification' } }
+        tool_choice: 'auto'
       }),
     });
 
@@ -184,15 +262,30 @@ When selecting agents, use their exact UUIDs from the list above.`;
     const data = await response.json();
     console.log('AI response received');
 
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || toolCall.function.name !== 'create_room_specification') {
-      throw new Error('Unexpected response format from AI');
+    const message = data.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
+
+    // If there's a tool call, parse and return the room specification
+    if (toolCall && toolCall.function.name === 'create_room_specification') {
+      const roomSpec = JSON.parse(toolCall.function.arguments);
+      console.log('Room specification parsed:', roomSpec.name);
+
+      return new Response(JSON.stringify({ 
+        room: roomSpec, 
+        availableAgents: agents,
+        response: `I've designed a room called **"${roomSpec.name}"** for you.`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const roomSpec = JSON.parse(toolCall.function.arguments);
-    console.log('Room specification parsed:', roomSpec.name);
-
-    return new Response(JSON.stringify({ room: roomSpec, availableAgents: agents }), {
+    // Otherwise return conversational response
+    const textResponse = message?.content || "I need more information about your deliberation needs. Can you describe what decision or analysis you're trying to make?";
+    
+    return new Response(JSON.stringify({ 
+      response: textResponse,
+      availableAgents: agents
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
