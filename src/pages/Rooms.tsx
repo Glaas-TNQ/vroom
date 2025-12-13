@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,25 +21,37 @@ interface Room {
   available_tools: any[];
 }
 
-const METHODOLOGY_LABELS: Record<string, { label: string; color: string }> = {
-  analytical_structured: { label: 'McKinsey', color: 'bg-blue-500/10 text-blue-500' },
-  strategic_executive: { label: 'OKR/BSC', color: 'bg-purple-500/10 text-purple-500' },
-  creative_brainstorming: { label: 'Brainstorming', color: 'bg-yellow-500/10 text-yellow-500' },
-  lean_iterative: { label: 'Lean', color: 'bg-green-500/10 text-green-500' },
-  parallel_ensemble: { label: 'Ensemble', color: 'bg-orange-500/10 text-orange-500' },
-  group_chat: { label: 'Group Chat', color: 'bg-muted text-muted-foreground' },
-};
-
-const WORKFLOW_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
-  sequential_pipeline: { label: 'Sequenziale', icon: <span>→</span> },
-  cyclic: { label: 'Ciclico', icon: <RotateCcw className="h-3 w-3" /> },
-  concurrent: { label: 'Parallelo', icon: <Users className="h-3 w-3" /> },
+const WORKFLOW_ICONS: Record<string, React.ReactNode> = {
+  sequential_pipeline: <span>→</span>,
+  cyclic: <RotateCcw className="h-3 w-3" />,
+  concurrent: <Users className="h-3 w-3" />,
 };
 
 export default function Rooms() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const getMethodologyLabel = (methodology: string) => {
+    return t(`methodologies.${methodology}.label`, { defaultValue: methodology });
+  };
+
+  const getMethodologyColor = (methodology: string): string => {
+    const colors: Record<string, string> = {
+      analytical_structured: 'bg-blue-500/10 text-blue-500',
+      strategic_executive: 'bg-purple-500/10 text-purple-500',
+      creative_brainstorming: 'bg-yellow-500/10 text-yellow-500',
+      lean_iterative: 'bg-green-500/10 text-green-500',
+      parallel_ensemble: 'bg-orange-500/10 text-orange-500',
+      group_chat: 'bg-muted text-muted-foreground',
+    };
+    return colors[methodology] || 'bg-muted text-muted-foreground';
+  };
+
+  const getWorkflowLabel = (workflow: string) => {
+    return t(`workflows.${workflow}.label`, { defaultValue: workflow });
+  };
 
   const { data: rooms, isLoading } = useQuery({
     queryKey: ['rooms'],
@@ -60,7 +73,7 @@ export default function Rooms() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      toast({ title: 'Room eliminata' });
+      toast({ title: t('common.delete') });
     },
   });
 
@@ -68,66 +81,108 @@ export default function Rooms() {
   const userRooms = rooms?.filter(r => !r.is_system) || [];
 
   return (
-    <AppLayout title="Rooms">
+    <AppLayout title={t('rooms.title')}>
       <div className="flex justify-between items-center mb-6">
-        <p className="text-muted-foreground">
-          Le rooms definiscono le regole di interazione per le sessioni di deliberazione
-        </p>
+        <p className="text-muted-foreground">{t('rooms.description')}</p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate('/rooms/advisor')}>
             <Sparkles className="h-4 w-4 mr-2" />
-            Room Advisor
+            {t('rooms.advisor')}
           </Button>
           <Button onClick={() => navigate('/rooms/new')}>
             <Plus className="h-4 w-4 mr-2" />
-            New Room
+            {t('rooms.create')}
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+        <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>
       ) : (
         <div className="space-y-8">
-          {/* System Rooms */}
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Metodologie Pre-configurate
+              {t('rooms.systemRooms')}
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {systemRooms.map((room) => (
-                <RoomCard 
-                  key={room.id} 
-                  room={room} 
-                  onStart={() => navigate(`/sessions/new?roomId=${room.id}`)}
-                  onEdit={() => navigate(`/rooms/${room.id}`)}
-                />
+                <Card key={room.id} className="hover:border-primary/50 transition-colors">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {room.name}
+                      <Badge variant="secondary" className="text-xs">{t('rooms.system')}</Badge>
+                    </CardTitle>
+                    <CardDescription className="line-clamp-2">{room.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className={getMethodologyColor(room.methodology)}>
+                        {getMethodologyLabel(room.methodology)}
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        {WORKFLOW_ICONS[room.workflow_type]}
+                        {getWorkflowLabel(room.workflow_type)}
+                      </Badge>
+                      <Badge variant="outline">{room.max_rounds} rounds</Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1" onClick={() => navigate(`/sessions/new?roomId=${room.id}`)}>
+                        <Play className="h-4 w-4 mr-1" />
+                        {t('rooms.startSession')}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/rooms/${room.id}`)}>
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
 
-          {/* User Rooms */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Le Mie Rooms</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('rooms.myRooms')}</h2>
             {userRooms.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {userRooms.map((room) => (
-                  <RoomCard 
-                    key={room.id} 
-                    room={room} 
-                    onStart={() => navigate(`/sessions/new?roomId=${room.id}`)}
-                    onEdit={() => navigate(`/rooms/${room.id}`)}
-                    onDelete={() => deleteMutation.mutate(room.id)}
-                  />
+                  <Card key={room.id} className="hover:border-primary/50 transition-colors">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">{room.name}</CardTitle>
+                      <CardDescription className="line-clamp-2">{room.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className={getMethodologyColor(room.methodology)}>
+                          {getMethodologyLabel(room.methodology)}
+                        </Badge>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          {WORKFLOW_ICONS[room.workflow_type]}
+                          {getWorkflowLabel(room.workflow_type)}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" className="flex-1" onClick={() => navigate(`/sessions/new?roomId=${room.id}`)}>
+                          <Play className="h-4 w-4 mr-1" />
+                          {t('rooms.startSession')}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/rooms/${room.id}`)}>
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => deleteMutation.mutate(room.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             ) : (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  <p>Non hai ancora creato rooms personalizzate.</p>
+                  <p>{t('rooms.noCustomRooms')}</p>
                   <Button variant="link" onClick={() => navigate('/rooms/new')}>
-                    Crea la tua prima room
+                    {t('rooms.createFirst')}
                   </Button>
                 </CardContent>
               </Card>
@@ -136,75 +191,5 @@ export default function Rooms() {
         </div>
       )}
     </AppLayout>
-  );
-}
-
-function RoomCard({ 
-  room, 
-  onStart, 
-  onEdit,
-  onDelete 
-}: { 
-  room: Room; 
-  onStart: () => void;
-  onEdit: () => void;
-  onDelete?: () => void;
-}) {
-  const methodology = METHODOLOGY_LABELS[room.methodology] || METHODOLOGY_LABELS.group_chat;
-  const workflow = WORKFLOW_LABELS[room.workflow_type] || WORKFLOW_LABELS.cyclic;
-
-  return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {room.name}
-              {room.is_system && (
-                <Badge variant="secondary" className="text-xs">Sistema</Badge>
-              )}
-            </CardTitle>
-            <CardDescription className="mt-1 line-clamp-2">
-              {room.description}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Badge className={methodology.color}>
-            {methodology.label}
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            {workflow.icon}
-            {workflow.label}
-          </Badge>
-          <Badge variant="outline">
-            {room.max_rounds} rounds
-          </Badge>
-        </div>
-
-        {room.available_tools && room.available_tools.length > 0 && (
-          <div className="text-xs text-muted-foreground">
-            Tools: {room.available_tools.map((t: any) => t.name || t).join(', ')}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <Button size="sm" className="flex-1" onClick={onStart}>
-            <Play className="h-4 w-4 mr-1" />
-            Start Session
-          </Button>
-          <Button size="sm" variant="outline" onClick={onEdit}>
-            <Settings className="h-4 w-4" />
-          </Button>
-          {onDelete && (
-            <Button size="sm" variant="outline" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

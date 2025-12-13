@@ -1,0 +1,192 @@
+{
+  "common": {
+    "loading": "Caricamento...",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "create": "Crea",
+    "back": "Indietro",
+    "next": "Avanti",
+    "submit": "Invia",
+    "search": "Cerca",
+    "noResults": "Nessun risultato trovato",
+    "error": "Errore",
+    "success": "Successo",
+    "confirm": "Conferma",
+    "yes": "Sì",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "agents": "Agenti",
+    "rooms": "Stanze",
+    "sessions": "Sessioni",
+    "settings": "Impostazioni",
+    "newSession": "Nuova Sessione"
+  },
+  "auth": {
+    "signIn": "Accedi",
+    "signUp": "Registrati",
+    "signOut": "Esci",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Password dimenticata?",
+    "noAccount": "Non hai un account?",
+    "hasAccount": "Hai già un account?"
+  },
+  "agents": {
+    "title": "Agenti",
+    "create": "Crea Agente",
+    "edit": "Modifica Agente",
+    "builder": "Costruttore Agenti",
+    "backToAgents": "Torna agli Agenti",
+    "name": "Nome Agente",
+    "description": "Descrizione",
+    "type": "Tipo Agente",
+    "color": "Colore",
+    "apiProvider": "Provider API",
+    "apiProviderDefault": "Usa Lovable AI (default)",
+    "apiProviderHint": "Lascia vuoto per usare Lovable AI, o seleziona il tuo provider",
+    "systemPrompt": "System Prompt",
+    "temperature": "Temperature",
+    "temperatureHint": "Più basso = più concentrato, Più alto = più creativo",
+    "maxTokens": "Token Massimi",
+    "systemAgent": "Agente di Sistema",
+    "customAgent": "Agente Personalizzato",
+    "systemAgentReadOnly": "Gli agenti di sistema sono in sola lettura e non possono essere modificati",
+    "duplicate": "Duplica come Agente Personalizzato",
+    "duplicated": "Agente duplicato",
+    "noAgents": "Nessun agente creato",
+    "createFirst": "Crea il tuo primo agente"
+  },
+  "rooms": {
+    "title": "Stanze",
+    "create": "Nuova Stanza",
+    "edit": "Modifica Stanza",
+    "builder": "Costruttore Stanze",
+    "backToRooms": "Torna alle Stanze",
+    "description": "Le stanze definiscono le regole di interazione per le sessioni di deliberazione",
+    "advisor": "Room Advisor",
+    "systemRooms": "Metodologie Pre-configurate",
+    "myRooms": "Le Mie Stanze",
+    "noCustomRooms": "Non hai ancora creato stanze personalizzate.",
+    "createFirst": "Crea la tua prima stanza",
+    "startSession": "Avvia Sessione",
+    "system": "Sistema",
+    "basicInfo": "Informazioni Base",
+    "roomName": "Nome Stanza",
+    "numRounds": "Numero Round",
+    "methodology": "Metodologia",
+    "methodologyDesc": "Scegli l'approccio di lavoro per questa stanza",
+    "workflow": "Flusso di Lavoro",
+    "workflowDesc": "Come interagiscono gli agenti",
+    "defaultAgents": "Agenti Predefiniti",
+    "defaultAgentsDesc": "Seleziona gli agenti che parteciperanno alle sessioni in questa stanza (opzionale)",
+    "noAgentsAvailable": "Nessun agente disponibile",
+    "availableTools": "Strumenti Disponibili",
+    "availableToolsDesc": "Abilita strumenti di ricerca per gli agenti",
+    "perplexityDeepResearch": "Perplexity (Ricerca Approfondita)",
+    "perplexityDesc": "Ricerca web approfondita con citazioni",
+    "tavilyQuickSearch": "Tavily (Ricerca Veloce)",
+    "tavilyDesc": "Ricerca web veloce per fatti e news",
+    "objectiveTemplate": "Template Obiettivo",
+    "objectiveTemplateDesc": "Definisci un template per l'obiettivo delle sessioni. Usa {topic} come placeholder.",
+    "systemRoomReadOnly": "Le stanze di sistema sono in sola lettura. Puoi usarle come base per creare le tue."
+  },
+  "methodologies": {
+    "analytical_structured": {
+      "label": "Analisi Strategica McKinsey",
+      "description": "Approccio analitico-strutturato con scomposizione MECE e Pyramid Principle. Ideale per problem solving complessi e due diligence."
+    },
+    "strategic_executive": {
+      "label": "Pianificazione OKR/BSC",
+      "description": "Balanced Scorecard per valutare decisioni su prospettive multiple: finanziaria, clienti, processi interni, crescita. Ideale per pianificazione strategica."
+    },
+    "creative_brainstorming": {
+      "label": "Brainstorming Creativo",
+      "description": "Design Thinking con ruoli di pensiero diversi. Generazione idee divergenti, poi convergenza. Ideale per innovazione e ideazione."
+    },
+    "lean_iterative": {
+      "label": "Validazione Lean Startup",
+      "description": "Ciclo Build-Measure-Learn per testare ipotesi rapidamente. Ideale per validazione idee, MVP e decisioni di pivot."
+    },
+    "parallel_ensemble": {
+      "label": "Analisi Multi-Prospettiva",
+      "description": "Analisi parallele indipendenti da specialisti diversi, poi sintesi finale. Ideale per decisioni critiche e multi-perspective analysis."
+    },
+    "group_chat": {
+      "label": "Group Chat",
+      "description": "Formato discussione aperta senza metodologia specifica."
+    }
+  },
+  "workflows": {
+    "cyclic": {
+      "label": "Ciclico",
+      "description": "Gli agenti si alternano in round successivi, costruendo sulla discussione precedente."
+    },
+    "sequential_pipeline": {
+      "label": "Sequenziale (Pipeline)",
+      "description": "Ogni agente elabora e passa al successivo, come in un processo a fasi."
+    },
+    "concurrent": {
+      "label": "Parallelo",
+      "description": "Tutti gli agenti rispondono simultaneamente, poi i risultati vengono aggregati."
+    }
+  },
+  "sessions": {
+    "title": "Sessioni",
+    "create": "Nuova Sessione",
+    "view": "Visualizza Sessione",
+    "start": "Avvia",
+    "noSessions": "Nessuna sessione",
+    "createFirst": "Crea la tua prima sessione per iniziare a deliberare",
+    "status": {
+      "draft": "Bozza",
+      "running": "In Corso",
+      "completed": "Completata",
+      "failed": "Fallita"
+    }
+  },
+  "newSession": {
+    "title": "Nuova Sessione",
+    "backToSessions": "Torna alle Sessioni",
+    "chooseRoom": "Scegli una Stanza",
+    "chooseRoomDesc": "Seleziona una stanza con metodologia pre-configurata o crea una sessione personalizzata",
+    "dontKnow": "Non sai quale scegliere?",
+    "askAdvisor": "Chiedi al Room Advisor AI la configurazione ideale",
+    "preConfigured": "Metodologie Pre-configurate",
+    "myRooms": "Le Mie Stanze",
+    "createCustom": "Crea Sessione Personalizzata",
+    "defineTopic": "Definisci il Topic",
+    "topicQuestion": "Topic / Domanda",
+    "topicPlaceholder": "es. Dovremmo espanderci nel mercato europeo?",
+    "objective": "Obiettivo (opzionale)",
+    "objectivePlaceholder": "Quale risultato specifico stai cercando?",
+    "numRounds": "Numero di Round",
+    "nextSelectAgents": "Avanti: Seleziona Agenti",
+    "selectAgents": "Seleziona Agenti",
+    "selectAgentsDesc": "Scegli almeno 2 agenti per partecipare alla deliberazione",
+    "preSelectedFromRoom": "pre-selezionati dalla stanza",
+    "noAgents": "Nessun agente disponibile.",
+    "createFirstAgent": "Crea il tuo primo agente",
+    "createSession": "Crea Sessione",
+    "creating": "Creazione...",
+    "sessionCreated": "Sessione creata",
+    "errorCreating": "Errore nella creazione"
+  },
+  "roomAdvisor": {
+    "title": "Room Advisor",
+    "backToRooms": "Torna alle Stanze",
+    "subtitle": "Descrivi il tuo obiettivo e ricevi consigli personalizzati sulla configurazione della stanza",
+    "placeholder": "Descrivi cosa vuoi ottenere...",
+    "welcome": "Ciao! Sono il Room Advisor, il tuo consulente AI per la configurazione delle deliberazioni.\n\nRaccontami cosa vuoi ottenere dalla tua prossima sessione di lavoro e ti consiglierò:\n- La **metodologia** più adatta (McKinsey, OKR, Brainstorming, Lean, Ensemble)\n- Il **flusso di lavoro** ideale (ciclico, sequenziale, parallelo)\n- Gli **agenti** più indicati per il tuo obiettivo\n- Il numero di **round** consigliato\n\nAd esempio, puoi dirmi:\n- \"Devo valutare se investire in una nuova linea di prodotto\"\n- \"Voglio generare idee per una campagna marketing innovativa\"\n- \"Devo decidere se acquisire una startup competitor\"",
+    "error": "Impossibile contattare il Room Advisor"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "providers": "Provider API",
+    "addProvider": "Aggiungi Provider",
+    "testConnection": "Testa Connessione"
+  }
+}

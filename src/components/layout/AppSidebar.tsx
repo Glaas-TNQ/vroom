@@ -1,4 +1,5 @@
 import { Home, Bot, Play, Settings, History, LayoutGrid } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -11,15 +12,17 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
-const navItems = [
-  { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Agents', url: '/agents', icon: Bot },
-  { title: 'Rooms', url: '/rooms', icon: LayoutGrid },
-  { title: 'Sessions', url: '/sessions', icon: History },
-  { title: 'Settings', url: '/settings', icon: Settings },
-];
-
 export function AppSidebar() {
+  const { t } = useTranslation();
+
+  const navItems = [
+    { title: t('nav.dashboard'), url: '/', icon: Home },
+    { title: t('nav.agents'), url: '/agents', icon: Bot },
+    { title: t('nav.rooms'), url: '/rooms', icon: LayoutGrid },
+    { title: t('nav.sessions'), url: '/sessions', icon: History },
+    { title: t('nav.settings'), url: '/settings', icon: Settings },
+  ];
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -28,7 +31,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
@@ -58,7 +61,7 @@ export function AppSidebar() {
                     activeClassName="bg-primary/80"
                   >
                     <Play className="h-4 w-4" />
-                    <span>New Session</span>
+                    <span>{t('nav.newSession')}</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
