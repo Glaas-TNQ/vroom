@@ -200,7 +200,7 @@ export default function NewSession() {
 
   return (
     <AppLayout title={t('newSession.title')}>
-      <div className="max-w-2xl">
+      <div className="space-y-6">
         <Button variant="ghost" onClick={() => step === 0 ? navigate('/sessions') : setStep(step - 1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           {step === 0 ? t('newSession.backToSessions') : t('common.back')}

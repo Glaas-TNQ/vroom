@@ -284,7 +284,7 @@ export default function AgentBuilder() {
 
   return (
     <AppLayout title={isEditing ? t('agents.edit') : t('agents.create')}>
-      <div className="max-w-2xl">
+      <div className="space-y-6">
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" onClick={() => navigate('/agents')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
