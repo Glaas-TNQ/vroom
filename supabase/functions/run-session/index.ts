@@ -35,35 +35,6 @@ interface Room {
   available_tools: any[];
 }
 
-// Call Lovable AI Gateway
-async function callLovableAI(messages: any[], agent: Agent) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages,
-      max_tokens: agent.max_tokens || 1024,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("Lovable AI error:", error);
-    if (response.status === 429) throw new Error("Rate limit exceeded");
-    if (response.status === 402) throw new Error("Payment required");
-    throw new Error(`Lovable AI error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "No response";
-}
-
 // Call OpenAI API
 async function callOpenAI(messages: any[], agent: Agent, provider: ProviderProfile) {
   const endpoint = provider.endpoint || "https://api.openai.com/v1/chat/completions";
@@ -194,15 +165,14 @@ async function callTavily(query: string, provider: ProviderProfile) {
   return results.map((r: any) => `**${r.title}**\n${r.content}\nSource: ${r.url}`).join("\n\n");
 }
 
-// Main function to call the appropriate provider
-async function callProviderAPI(
+// Main function to call the appropriate provider - requires a provider profile
+async function callAgentWithProvider(
   messages: any[], 
   agent: Agent, 
   providerProfile: ProviderProfile | null
 ): Promise<string> {
   if (!providerProfile) {
-    console.log(`Agent ${agent.name}: Using Lovable AI`);
-    return callLovableAI(messages, agent);
+    throw new Error(`Agent "${agent.name}" has no provider configured. Please configure a provider in Settings.`);
   }
 
   console.log(`Agent ${agent.name}: Using ${providerProfile.provider_type}`);
@@ -219,8 +189,8 @@ async function callProviderAPI(
       const lastMessage = messages[messages.length - 1]?.content || "";
       return callTavily(lastMessage, providerProfile);
     default:
-      console.log(`Unknown provider type: ${providerProfile.provider_type}, falling back to Lovable AI`);
-      return callLovableAI(messages, agent);
+      // Custom provider - use OpenAI-compatible format
+      return callOpenAI(messages, agent, providerProfile);
   }
 }
 
@@ -337,20 +307,28 @@ serve(async (req) => {
       .filter((a: Agent) => a.provider_profile_id)
       .map((a: Agent) => a.provider_profile_id);
     
+    if (providerIds.length === 0) {
+      throw new Error("No agents have a provider configured. Please configure at least one API provider in Settings and assign it to your agents.");
+    }
+    
     let providerProfiles: Record<string, ProviderProfile> = {};
-    if (providerIds.length > 0) {
-      // Use the decrypted view which is only accessible via service role
-      const { data: providers } = await supabase
-        .from("provider_profiles_decrypted")
-        .select("*")
-        .in("id", providerIds);
-      
-      if (providers) {
-        providerProfiles = providers.reduce((acc: Record<string, ProviderProfile>, p: ProviderProfile) => {
-          acc[p.id] = p;
-          return acc;
-        }, {});
-      }
+    // Use the decrypted view which is only accessible via service role
+    const { data: providers } = await supabase
+      .from("provider_profiles_decrypted")
+      .select("*")
+      .in("id", providerIds);
+    
+    if (providers) {
+      providerProfiles = providers.reduce((acc: Record<string, ProviderProfile>, p: ProviderProfile) => {
+        acc[p.id] = p;
+        return acc;
+      }, {});
+    }
+    
+    // Get the first available provider for synthesis operations
+    const synthesisProvider = providers && providers.length > 0 ? providers[0] : null;
+    if (!synthesisProvider) {
+      throw new Error("No valid provider profiles found. Please check your API provider configuration in Settings.");
     }
 
     // Update status to running
@@ -388,7 +366,7 @@ serve(async (req) => {
             : null;
 
           try {
-            const content = await callProviderAPI(messages, agent, providerProfile);
+            const content = await callAgentWithProvider(messages, agent, providerProfile);
             return {
               agent_id: agent.id,
               agent_name: agent.name,
@@ -431,7 +409,7 @@ serve(async (req) => {
             : null;
 
           try {
-            const content = await callProviderAPI(messages, agent, providerProfile);
+            const content = await callAgentWithProvider(messages, agent, providerProfile);
 
             const message = {
               agent_id: agent.id,
@@ -844,10 +822,16 @@ ${isItalian ? "Genera il report completo seguendo ESATTAMENTE la struttura richi
 
     let finalReport = "";
     try {
-      finalReport = await callLovableAI(finalReportMessages, { 
+      // Use the synthesis provider to generate the final report
+      const synthesisAgent: Agent = { 
+        id: 'synthesis', 
+        name: 'Synthesizer', 
+        system_prompt: '', 
+        temperature: 0.4, 
         max_tokens: 4096, 
-        temperature: 0.4 
-      } as Agent);
+        provider_profile_id: synthesisProvider.id 
+      };
+      finalReport = await callAgentWithProvider(finalReportMessages, synthesisAgent, synthesisProvider);
       console.log("Final report generated successfully");
     } catch (error) {
       console.error("Failed to generate final report:", error);
@@ -872,10 +856,15 @@ ${isItalian ? "Genera il report completo seguendo ESATTAMENTE la struttura richi
 
     let actionItems: string[] = [];
     try {
-      const actionItemsContent = await callLovableAI(actionItemsMessages, { 
+      const actionItemsAgent: Agent = { 
+        id: 'action-items', 
+        name: 'ActionExtractor', 
+        system_prompt: '', 
+        temperature: 0.2, 
         max_tokens: 1024, 
-        temperature: 0.2 
-      } as Agent);
+        provider_profile_id: synthesisProvider.id 
+      };
+      const actionItemsContent = await callAgentWithProvider(actionItemsMessages, actionItemsAgent, synthesisProvider);
       const match = actionItemsContent.match(/\[[\s\S]*\]/);
       if (match) actionItems = JSON.parse(match[0]);
     } catch (error) {
