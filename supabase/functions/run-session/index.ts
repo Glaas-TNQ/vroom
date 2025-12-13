@@ -332,15 +332,16 @@ serve(async (req) => {
       throw new Error("No agents found");
     }
 
-    // Get provider profiles for agents that have one
+    // Get provider profiles for agents that have one (using decrypted view for server-side access)
     const providerIds = agents
       .filter((a: Agent) => a.provider_profile_id)
       .map((a: Agent) => a.provider_profile_id);
     
     let providerProfiles: Record<string, ProviderProfile> = {};
     if (providerIds.length > 0) {
+      // Use the decrypted view which is only accessible via service role
       const { data: providers } = await supabase
-        .from("provider_profiles")
+        .from("provider_profiles_decrypted")
         .select("*")
         .in("id", providerIds);
       
