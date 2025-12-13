@@ -1,4 +1,4 @@
-import { Home, Bot, Play, Settings, History } from 'lucide-react';
+import { Home, Bot, Play, Settings, History, LayoutGrid } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
 const navItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Agents', url: '/agents', icon: Bot },
+  { title: 'Rooms', url: '/rooms', icon: LayoutGrid },
   { title: 'Sessions', url: '/sessions', icon: History },
   { title: 'Settings', url: '/settings', icon: Settings },
 ];

@@ -175,6 +175,57 @@ export type Database = {
         }
         Relationships: []
       }
+      rooms: {
+        Row: {
+          agent_ids: string[]
+          available_tools: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_system: boolean | null
+          max_rounds: number
+          methodology: string
+          name: string
+          objective_template: string | null
+          require_consensus: boolean | null
+          updated_at: string | null
+          user_id: string | null
+          workflow_type: string
+        }
+        Insert: {
+          agent_ids?: string[]
+          available_tools?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          max_rounds?: number
+          methodology?: string
+          name: string
+          objective_template?: string | null
+          require_consensus?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          workflow_type?: string
+        }
+        Update: {
+          agent_ids?: string[]
+          available_tools?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          max_rounds?: number
+          methodology?: string
+          name?: string
+          objective_template?: string | null
+          require_consensus?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          workflow_type?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           action_items: Json | null
@@ -186,6 +237,7 @@ export type Database = {
           max_rounds: number
           objective: string | null
           results: Json | null
+          room_id: string | null
           room_template_id: string | null
           status: Database["public"]["Enums"]["session_status"]
           topic: string
@@ -203,6 +255,7 @@ export type Database = {
           max_rounds?: number
           objective?: string | null
           results?: Json | null
+          room_id?: string | null
           room_template_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           topic: string
@@ -220,6 +273,7 @@ export type Database = {
           max_rounds?: number
           objective?: string | null
           results?: Json | null
+          room_id?: string | null
           room_template_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           topic?: string
@@ -228,6 +282,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sessions_room_template_id_fkey"
             columns: ["room_template_id"]
