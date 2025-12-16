@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { History, Play, Plus, Trash2, Clock, CheckCircle2, XCircle, FileEdit, Target } from 'lucide-react';
+import { History, Play, Plus, Trash2, Clock, CheckCircle2, XCircle, FileEdit, Target, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/EmptyState';
+import { CardActionsMenu } from '@/components/CardActionsMenu';
 
 interface Session {
   id: string;
@@ -58,6 +60,7 @@ export default function Sessions() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['sessions'],
@@ -135,24 +138,22 @@ export default function Sessions() {
                                 {getStatusBadge(session.status)}
                               </div>
                             </div>
-                            <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {session.status === 'draft' && (
-                                <Button variant="ghost" size="icon" onClick={(e) => e.preventDefault()}>
-                                  <Play className="h-4 w-4 text-primary" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  deleteMutation.mutate(session.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
+                            <CardActionsMenu
+                              actions={[
+                                {
+                                  label: t('sessions.view'),
+                                  icon: ExternalLink,
+                                  onClick: () => navigate(`/sessions/${session.id}`),
+                                },
+                                {
+                                  label: t('common.delete'),
+                                  icon: Trash2,
+                                  onClick: () => deleteMutation.mutate(session.id),
+                                  variant: 'destructive',
+                                  separator: true,
+                                },
+                              ]}
+                            />
                           </div>
                         </CardHeader>
                       
@@ -218,19 +219,15 @@ export default function Sessions() {
             })}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <History className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">{t('sessions.noSessions')}</h3>
-              <p className="text-muted-foreground text-center mb-4">{t('sessions.createFirst')}</p>
-              <Button asChild>
-                <Link to="/sessions/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('sessions.create')}
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={History}
+            title={t('sessions.noSessions')}
+            description={t('sessions.createFirst')}
+            action={{
+              label: t('sessions.create'),
+              href: '/sessions/new',
+            }}
+          />
         )}
       </div>
     </AppLayout>

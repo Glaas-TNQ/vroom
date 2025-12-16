@@ -24,7 +24,8 @@
     "setDefault": "Imposta Default",
     "adding": "Aggiunta...",
     "running": "In esecuzione...",
-    "noDescription": "Nessuna descrizione"
+    "noDescription": "Nessuna descrizione",
+    "settings": "Impostazioni"
   },
   "nav": {
     "dashboard": "Dashboard",

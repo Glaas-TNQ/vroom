@@ -102,46 +102,54 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.aiAgents')}</CardTitle>
-              <Bot className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.agents || 0}</div>
-              <p className="text-xs text-muted-foreground">{t('dashboard.configuredAgents')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('nav.rooms')}</CardTitle>
-              <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.rooms || 0}</div>
-              <p className="text-xs text-muted-foreground">{t('rooms.title')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.sessions')}</CardTitle>
-              <History className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">{t('dashboard.totalDeliberations')}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.apiProviders')}</CardTitle>
-              <Key className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.providers || 0}</div>
-              <p className="text-xs text-muted-foreground">{t('dashboard.connectedProviders')}</p>
-            </CardContent>
-          </Card>
+          <Link to="/agents">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">{t('dashboard.aiAgents')}</CardTitle>
+                <Bot className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.agents || 0}</div>
+                <p className="text-xs text-muted-foreground">{t('dashboard.configuredAgents')}</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/rooms">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">{t('nav.rooms')}</CardTitle>
+                <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.rooms || 0}</div>
+                <p className="text-xs text-muted-foreground">{t('rooms.title')}</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/sessions">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">{t('dashboard.sessions')}</CardTitle>
+                <History className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.sessions || 0}</div>
+                <p className="text-xs text-muted-foreground">{t('dashboard.totalDeliberations')}</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/settings">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">{t('dashboard.apiProviders')}</CardTitle>
+                <Key className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.providers || 0}</div>
+                <p className="text-xs text-muted-foreground">{t('dashboard.connectedProviders')}</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -218,10 +226,12 @@ export default function Dashboard() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>{t('dashboard.noSessions')}</p>
-                  <Button asChild variant="outline" size="sm" className="mt-2">
+                <div className="text-center py-8">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <History className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground mb-3">{t('dashboard.noSessions')}</p>
+                  <Button asChild variant="outline" size="sm">
                     <Link to="/sessions/new">{t('dashboard.startFirst')}</Link>
                   </Button>
                 </div>
