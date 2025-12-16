@@ -1,20 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, Plus, Trash2 } from 'lucide-react';
+import { Bot, Plus, Trash2, Settings } from 'lucide-react';
 import { ICON_MAP } from '@/components/AgentIconPicker';
 import { Agent } from '@/hooks/useAgents';
 import { useTranslatedAgents } from '@/hooks/useSystemTranslation';
+import { EmptyState } from '@/components/EmptyState';
+import { CardActionsMenu } from '@/components/CardActionsMenu';
 
 export default function Agents() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: agents, isLoading } = useTranslatedAgents();
 
@@ -28,8 +31,6 @@ export default function Agents() {
       toast({ title: t('agents.deleted') });
     },
   });
-
-  // Using ICON_MAP from AgentIconPicker
 
   return (
     <AppLayout title={t('agents.title')}>
@@ -70,21 +71,22 @@ export default function Agents() {
                           {ICON_MAP[agent.icon] || '🤖'}
                         </div>
                       )}
-                      {!agent.is_system && (
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              deleteMutation.mutate(agent.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
+                      <CardActionsMenu
+                        actions={[
+                          {
+                            label: t('common.settings'),
+                            icon: Settings,
+                            onClick: () => navigate(`/agents/${agent.id}`),
+                          },
+                          ...(!agent.is_system ? [{
+                            label: t('common.delete'),
+                            icon: Trash2,
+                            onClick: () => deleteMutation.mutate(agent.id),
+                            variant: 'destructive' as const,
+                            separator: true,
+                          }] : []),
+                        ]}
+                      />
                     </div>
                     <CardTitle className="flex items-center gap-2 flex-wrap">
                       <span className="truncate">{agent.name}</span>
@@ -101,19 +103,15 @@ export default function Agents() {
             ))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Bot className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">{t('agents.noAgents')}</h3>
-              <p className="text-muted-foreground text-center mb-4">{t('agents.noAgentsDesc')}</p>
-              <Button asChild>
-                <Link to="/agents/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('agents.create')}
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Bot}
+            title={t('agents.noAgents')}
+            description={t('agents.noAgentsDesc')}
+            action={{
+              label: t('agents.create'),
+              href: '/agents/new',
+            }}
+          />
         )}
       </div>
     </AppLayout>

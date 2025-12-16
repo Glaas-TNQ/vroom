@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemTranslation } from '@/hooks/useSystemTranslation';
-import { Play, Trash2, Settings, Users, RotateCcw, Sparkles } from 'lucide-react';
+import { Play, Trash2, Settings, Users, RotateCcw, Sparkles, LayoutGrid } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { CardActionsMenu } from '@/components/CardActionsMenu';
 
 interface Room {
   id: string;
@@ -83,16 +85,67 @@ export default function Rooms() {
   const systemRooms = rooms?.filter(r => r.is_system) || [];
   const userRooms = rooms?.filter(r => !r.is_system) || [];
 
+  const RoomCard = ({ room, isSystem }: { room: Room; isSystem: boolean }) => (
+    <Link to={`/rooms/${room.id}`} className="block h-full">
+      <Card className="group hover:border-primary/50 transition-colors h-full flex flex-col cursor-pointer">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
+              <span className="truncate">{room.name}</span>
+              {isSystem && (
+                <Badge variant="secondary" className="text-xs shrink-0">{t('rooms.system')}</Badge>
+              )}
+            </CardTitle>
+            <CardActionsMenu
+              actions={[
+                {
+                  label: t('rooms.startSession'),
+                  icon: Play,
+                  onClick: () => navigate(`/sessions/new?roomId=${room.id}`),
+                },
+                {
+                  label: t('common.settings'),
+                  icon: Settings,
+                  onClick: () => navigate(`/rooms/${room.id}`),
+                },
+                ...(!isSystem ? [{
+                  label: t('common.delete'),
+                  icon: Trash2,
+                  onClick: () => deleteMutation.mutate(room.id),
+                  variant: 'destructive' as const,
+                  separator: true,
+                }] : []),
+              ]}
+            />
+          </div>
+          <CardDescription className="line-clamp-2 min-h-[2.5rem]">
+            {room.description || t('common.noDescription')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="mt-auto pt-0">
+          <div className="flex flex-wrap gap-2">
+            <Badge className={getMethodologyColor(room.methodology)}>
+              {getMethodologyLabel(room.methodology)}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              {WORKFLOW_ICONS[room.workflow_type]}
+              {getWorkflowLabel(room.workflow_type)}
+            </Badge>
+            <Badge variant="outline">{room.max_rounds} rounds</Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+
   return (
     <AppLayout title={t('rooms.title')}>
       <div className="flex justify-between items-center mb-6">
         <p className="text-muted-foreground">{t('rooms.description')}</p>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate('/rooms/new')}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            {t('rooms.create')}
-          </Button>
-        </div>
+        <Button onClick={() => navigate('/rooms/new')}>
+          <Sparkles className="h-4 w-4 mr-2" />
+          {t('rooms.create')}
+        </Button>
       </div>
 
       {isLoading ? (
@@ -106,38 +159,7 @@ export default function Rooms() {
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {systemRooms.map((room) => (
-                <Card key={room.id} className="hover:border-primary/50 transition-colors h-full flex flex-col">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
-                      <span className="truncate">{room.name}</span>
-                      <Badge variant="secondary" className="text-xs shrink-0">{t('rooms.system')}</Badge>
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-                      {room.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 mt-auto">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className={getMethodologyColor(room.methodology)}>
-                        {getMethodologyLabel(room.methodology)}
-                      </Badge>
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        {WORKFLOW_ICONS[room.workflow_type]}
-                        {getWorkflowLabel(room.workflow_type)}
-                      </Badge>
-                      <Badge variant="outline">{room.max_rounds} rounds</Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => navigate(`/sessions/new?roomId=${room.id}`)}>
-                        <Play className="h-4 w-4 mr-1" />
-                        {t('rooms.startSession')}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/rooms/${room.id}`)}>
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RoomCard key={room.id} room={room} isSystem={true} />
               ))}
             </div>
           </div>
@@ -147,48 +169,19 @@ export default function Rooms() {
             {userRooms.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {userRooms.map((room) => (
-                  <Card key={room.id} className="hover:border-primary/50 transition-colors h-full flex flex-col">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg truncate">{room.name}</CardTitle>
-                      <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-                        {room.description || t('common.noDescription')}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 mt-auto">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className={getMethodologyColor(room.methodology)}>
-                          {getMethodologyLabel(room.methodology)}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          {WORKFLOW_ICONS[room.workflow_type]}
-                          {getWorkflowLabel(room.workflow_type)}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" className="flex-1" onClick={() => navigate(`/sessions/new?roomId=${room.id}`)}>
-                          <Play className="h-4 w-4 mr-1" />
-                          {t('rooms.startSession')}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => navigate(`/rooms/${room.id}`)}>
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => deleteMutation.mutate(room.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <RoomCard key={room.id} room={room} isSystem={false} />
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <p>{t('rooms.noCustomRooms')}</p>
-                  <Button variant="link" onClick={() => navigate('/rooms/new')}>
-                    {t('rooms.createFirst')}
-                  </Button>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={LayoutGrid}
+                title={t('rooms.noCustomRooms')}
+                description={t('rooms.createFirst')}
+                action={{
+                  label: t('rooms.create'),
+                  onClick: () => navigate('/rooms/new'),
+                }}
+              />
             )}
           </div>
         </div>

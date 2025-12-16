@@ -24,7 +24,8 @@
     "setDefault": "Set Default",
     "adding": "Adding...",
     "running": "Running...",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "settings": "Settings"
   },
   "nav": {
     "dashboard": "Dashboard",
