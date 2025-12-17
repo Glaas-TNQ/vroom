@@ -276,10 +276,10 @@ export default function SessionView() {
         </div>
 
         {/* Session Header - scrolls with page */}
-        <div className="p-6 rounded-lg border bg-card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl font-semibold">{session.topic}</h2>
-            <div className="flex items-center gap-2">
+        <div className="p-6 rounded-lg border bg-card overflow-hidden">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h2 className="text-2xl font-semibold break-words min-w-0 flex-1">{session.topic}</h2>
+            <div className="flex items-center gap-2 shrink-0">
               {getStatusBadge(session.status)}
               <Button
                 variant="ghost"
@@ -296,7 +296,7 @@ export default function SessionView() {
             </div>
           </div>
           {session.objective && (
-            <p className="text-muted-foreground leading-relaxed">{session.objective}</p>
+            <p className="text-muted-foreground leading-relaxed break-words">{session.objective}</p>
           )}
           <div className="flex gap-4 text-sm text-muted-foreground mt-3">
             <span>{t('sessions.round')} {session.current_round} {t('sessions.of')} {session.max_rounds}</span>
@@ -344,34 +344,34 @@ export default function SessionView() {
                         const agent = session.agent_config.find(a => a.id === msg.agent_id);
                         const agentColor = agent?.color || '#6366f1';
                         
-                        return (
-                          <div 
-                            key={i} 
-                            className="rounded-xl p-6 border-l-4 shadow-sm"
-                            style={{ 
-                              borderLeftColor: agentColor,
-                              backgroundColor: `${agentColor}06`
-                            }}
-                          >
-                            <div className="flex items-center gap-4 mb-4">
-                              <div
-                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
-                                style={{ backgroundColor: `${agentColor}20` }}
-                              >
-                                {iconMap[agent?.icon || 'bot'] || '🤖'}
-                              </div>
-                              <div>
-                                <span className="font-semibold text-base">{msg.agent_name}</span>
-                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
-                                  {t('sessions.round')} {msg.round}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="pl-[3.75rem]">
-                              <Markdown content={msg.content} />
-                            </div>
-                          </div>
-                        );
+                                        return (
+                                          <div 
+                                            key={i} 
+                                            className="rounded-xl p-6 border-l-4 shadow-sm overflow-hidden"
+                                            style={{ 
+                                              borderLeftColor: agentColor,
+                                              backgroundColor: `${agentColor}06`
+                                            }}
+                                          >
+                                            <div className="flex items-center gap-4 mb-4">
+                                              <div
+                                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
+                                                style={{ backgroundColor: `${agentColor}20` }}
+                                              >
+                                                {iconMap[agent?.icon || 'bot'] || '🤖'}
+                                              </div>
+                                              <div>
+                                                <span className="font-semibold text-base">{msg.agent_name}</span>
+                                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                                  {t('sessions.round')} {msg.round}
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div className="pl-[3.75rem] break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                              <Markdown content={msg.content} />
+                                            </div>
+                                          </div>
+                                        );
                       })}
                     </div>
                   </div>
@@ -387,34 +387,34 @@ export default function SessionView() {
                         const agent = session.agent_config.find(a => a.id === msg.agent_id);
                         const agentColor = agent?.color || '#6366f1';
                         
-                        return (
-                          <div 
-                            key={i} 
-                            className="rounded-xl p-6 border-l-4 shadow-sm"
-                            style={{ 
-                              borderLeftColor: agentColor,
-                              backgroundColor: `${agentColor}06`
-                            }}
-                          >
-                            <div className="flex items-center gap-4 mb-4">
-                              <div
-                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
-                                style={{ backgroundColor: `${agentColor}20` }}
-                              >
-                                {iconMap[agent?.icon || 'bot'] || '🤖'}
-                              </div>
-                              <div>
-                                <span className="font-semibold text-base">{msg.agent_name}</span>
-                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
-                                  {t('sessions.round')} {msg.round}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="pl-[3.75rem]">
-                              <Markdown content={msg.content} />
-                            </div>
-                          </div>
-                        );
+                                        return (
+                                          <div 
+                                            key={i} 
+                                            className="rounded-xl p-6 border-l-4 shadow-sm overflow-hidden"
+                                            style={{ 
+                                              borderLeftColor: agentColor,
+                                              backgroundColor: `${agentColor}06`
+                                            }}
+                                          >
+                                            <div className="flex items-center gap-4 mb-4">
+                                              <div
+                                                className="h-11 w-11 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
+                                                style={{ backgroundColor: `${agentColor}20` }}
+                                              >
+                                                {iconMap[agent?.icon || 'bot'] || '🤖'}
+                                              </div>
+                                              <div>
+                                                <span className="font-semibold text-base">{msg.agent_name}</span>
+                                                <span className="text-xs text-muted-foreground ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                                  {t('sessions.round')} {msg.round}
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div className="pl-[3.75rem] break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                                              <Markdown content={msg.content} />
+                                            </div>
+                                          </div>
+                                        );
                       })}
                       {isRunning && (
                         <div className="flex items-center gap-3 text-muted-foreground p-6 bg-muted/30 rounded-xl">

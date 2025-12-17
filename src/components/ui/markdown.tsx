@@ -8,7 +8,7 @@ interface MarkdownProps {
 
 export function Markdown({ content, className }: MarkdownProps) {
   return (
-    <div className={cn('prose prose-sm dark:prose-invert max-w-none text-foreground', className)}>
+    <div className={cn('prose prose-sm dark:prose-invert max-w-none text-foreground break-words', className)} style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
