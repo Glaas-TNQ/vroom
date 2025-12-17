@@ -176,28 +176,27 @@ export function RoomAdvisorDialog({ open, onOpenChange, rooms, onSelectRoom }: R
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-5">
+        <ScrollArea className="flex-1 overflow-hidden">
+          <div className="p-6 space-y-5">
             {messages.map((message, index) => (
-              <div key={index} className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+              <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
                 {message.role === 'assistant' && (
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
                 )}
                 <div
-                  className={`rounded-xl overflow-hidden break-words ${
+                  className={`rounded-xl p-4 min-w-0 ${
                     message.role === 'user'
-                      ? 'bg-primary text-primary-foreground max-w-[75%] p-4'
-                      : 'bg-card text-card-foreground flex-1 max-w-[85%] p-4 border'
+                      ? 'bg-primary text-primary-foreground max-w-[70%]'
+                      : 'bg-card text-card-foreground border max-w-[85%]'
                   }`}
+                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                 >
-                  <div className="overflow-x-auto">
-                    <Markdown content={message.content} />
-                  </div>
+                  <Markdown content={message.content} className="[&_*]:break-words" />
                 </div>
                 {message.role === 'user' && (
-                  <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
                     <User className="h-4 w-4 text-primary-foreground" />
                   </div>
                 )}
