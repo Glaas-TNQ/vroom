@@ -189,7 +189,7 @@ export function RoomAdvisorDialog({ open, onOpenChange, rooms, onSelectRoom }: R
                   className={`rounded-xl ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground max-w-[75%] p-4'
-                      : 'bg-muted/50 flex-1 max-w-[85%] p-4 border'
+                      : 'bg-card text-card-foreground flex-1 max-w-[85%] p-4 border'
                   }`}
                 >
                   <Markdown content={message.content} />
@@ -207,7 +207,7 @@ export function RoomAdvisorDialog({ open, onOpenChange, rooms, onSelectRoom }: R
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
-                <div className="bg-muted/50 rounded-xl p-4 border">
+                <div className="bg-card text-card-foreground rounded-xl p-4 border">
                   <div className="flex gap-2">
                     <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" />
                     <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.15s]" />
