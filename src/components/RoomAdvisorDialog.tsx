@@ -186,13 +186,15 @@ export function RoomAdvisorDialog({ open, onOpenChange, rooms, onSelectRoom }: R
                   </div>
                 )}
                 <div
-                  className={`rounded-xl ${
+                  className={`rounded-xl overflow-hidden break-words ${
                     message.role === 'user'
                       ? 'bg-primary text-primary-foreground max-w-[75%] p-4'
                       : 'bg-card text-card-foreground flex-1 max-w-[85%] p-4 border'
                   }`}
                 >
-                  <Markdown content={message.content} />
+                  <div className="overflow-x-auto">
+                    <Markdown content={message.content} />
+                  </div>
                 </div>
                 {message.role === 'user' && (
                   <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center shrink-0 mt-1">
